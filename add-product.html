@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1">
+<title>Add Product - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+ body{font-family:'Hind Siliguri',sans-serif}
+.hidden{display:none!important}
+.no-scrollbar::-webkit-scrollbar{display:none}
+ input, select, textarea{font-size:16px}
+ @media(min-width:768px){input, select, textarea{font-size:14px}}
+.scrollbar-hide::-webkit-scrollbar{display:none}
+.scrollbar-hide{-ms-overflow-style:none; scrollbar-width:none}
+</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div class="bg-[#121212] border-b border-white/10 p-3 md:p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <a href="admin-dashboard.html" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">←</a>
+    <h1 class="font-black text-sm md:text-base">নতুন প্রোডাক্ট</h1>
+  </div>
+  <div class="flex gap-2">
+    <a href="products.html" class="bg-white/10 px-4 py-2 rounded-full text-xs font-bold">All Products</a>
+  </div>
+</div>
+
+<div class="p-3 md:p-6 max-w-4xl mx-auto w-full space-y-4">
+
+  <!-- Step 1: Select From Stock -->
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-4 md:p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-black text-sm">1️⃣ ক্যাটাগরি থেকে সিলেক্ট করুন *</h3>
+      <p id="totalCatCount" class="text-xs text-white/40"></p>
+    </div>
+
+    <div id="categoryTabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+
+    <!-- ✅ UPDATE: IN ID / Style No সার্চ + Scanner -->
+    <div class="flex gap-2 mt-3">
+      <input id="productSearch" placeholder="IN ID / Style No / নাম দিয়ে সার্চ... (যেমন IN-01, JER-101, Jersey)" class="flex-1 bg-black border border-white/10 rounded-2xl px-4 py-3.5 text-sm outline-none focus:border-[#FFC300]" />
+      <button id="scanBarcodeBtn" class="bg-[#FFC300] text-black px-4 py-3.5 rounded-2xl text-xs font-black shrink-0">📷 Scan</button>
+    </div>
+
+    <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 max-h-[450px] overflow-y-auto pr-1">
+      <p class="col-span-2 text-center text-white/30 py-10 text-sm">প্রোডাক্ট লোড হচ্ছে...</p>
+    </div>
+
+    <select id="stockSelect" class="hidden"><option value="">--</option></select>
+    <p class="text-xs text-white/40 mt-3">💡 IN ID বা Style No লিখে সার্চ করুন বা 📷 Scan করুন -</p>
+
+    <div id="stockPreview" class="hidden mt-4 bg-black border border-[#FFC300]/30 rounded-2xl p-3 flex gap-3">
+      <img id="previewStockImg" src="" class="w-16 h-16 object-contain bg-black border border-white/10 rounded-xl">
+      <div class="flex-1 min-w-0">
+        <p id="previewStockName" class="font-bold text-sm truncate"></p>
+        <p id="previewStockCat" class="text-xs bg-[#FFC300] text-black inline-block px-2 rounded-full mt-1 font-bold"></p>
+        <p id="previewStockInfo" class="text-xs text-white/40 mt-1 truncate"></p>
+      </div>
+      <div class="text-right shrink-0">
+        <p id="previewStockQty" class="font-black"></p>
+        <p class="text-xs text-white/40">pcs</p>
+        <p id="previewStockBuy" class="text-xs text-[#FFC300] mt-1 font-bold"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Manual Price & Info -->
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-4 md:p-6 space-y-4">
+    <h3 class="font-black text-sm">2️⃣ বিক্রি ইনফো (ম্যানুয়াল)</h3>
+    <div class="grid grid-cols-2 gap-3">
+      <input id="price" type="number" placeholder="বিক্রি দাম * ৳" class="bg-black border border-white/10 rounded-2xl px-4 py-3.5 text-sm outline-none">
+      <input id="comparePrice" type="number" placeholder="ডিসকাউন্ট আগের দাম ৳" class="bg-black border border-white/10 rounded-2xl px-4 py-3.5 text-sm outline-none">
+    </div>
+    <textarea id="description" rows="3" placeholder="প্রোডাক্ট বর্ণনা..." class="w-full bg-black border border-white/10 rounded-2xl px-4 py-3.5 text-sm outline-none resize-none"></textarea>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <label class="bg-black border border-white/10 rounded-2xl px-4 py-3.5 flex justify-between items-center cursor-pointer">
+        <span class="text-sm">⭐ হোমপেজ Featured</span>
+        <input id="isFeatured" type="checkbox" class="w-5 h-5 accent-[#FFC300]">
+      </label>
+      <label class="bg-black border border-white/10 rounded-2xl px-4 py-3.5 flex justify-between items-center cursor-pointer">
+        <span class="text-sm">🖼️ ব্যানার স্লাইডে দেখাবে</span>
+        <input id="isBanner" type="checkbox" class="w-5 h-5 accent-[#FFC300]">
+      </label>
+    </div>
+    <select id="status" class="w-full bg-black border border-white/10 rounded-2xl px-4 py-3.5 text-sm outline-none">
+      <option value="active">Active - লাইভ থাকবে</option>
+      <option value="draft">Draft - হাইড থাকবে</option>
+    </select>
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+      <p class="text-xs font-bold text-white/40 mb-2">স্টক থেকে অটো আসবে (Readonly)</p>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <p>নাম: <span id="autoName" class="text-white font-bold"></span></p>
+        <p>ক্যাটাগরি: <span id="autoCat" class="text-[#FFC300] font-bold"></span></p>
+        <p>কেনা: <span id="autoBuy" class="text-[#FFC300]"></span></p>
+        <p>স্টক: <span id="autoQty" class="text-white"></span></p>
+        <p class="col-span-2">কালার: <span id="autoColors" class="text-white"></span></p>
+        <p class="col-span-2">সাইজ: <span id="autoSizes" class="text-white/60"></span></p>
+      </div>
+    </div>
+    <button id="saveBtn" class="w-full bg-[#FFC300] text-black py-4 rounded-full font-black text-sm">🚀 পাবলিশ করুন</button>
+    <p id="uploadStatus" class="text-xs text-yellow-400 mt-2 hidden text-center"></p>
+  </div>
+</div>
+
+<!-- ✅ Scanner Modal -->
+<div id="scannerModal" class="fixed inset-0 bg-black/95 hidden z-[70] p-4 flex flex-col items-center justify-center">
+  <div class="bg-[#181818] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden">
+    <div class="p-4 border-b border-white/10 flex justify-between items-center">
+      <h3 class="font-black text-sm">📷 বারকোড স্ক্যান করুন</h3>
+      <button id="closeScanner" class="w-8 h-8 bg-white/10 rounded-full">✕</button>
+    </div>
+    <div class="p-3">
+      <div id="reader" class="rounded-xl overflow-hidden bg-black"></div>
+      <p class="text-xs text-white/40 text-center mt-3">IN ID বা Style No ক্যামেরার সামনে ধরুন</p>
+      <div class="mt-3">
+        <input id="manualBarcodeInput" placeholder="ম্যানুয়ালি IN ID / Style লিখুন..." class="w-full bg-black border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none">
+        <button id="manualSearchBtn" class="w-full mt-2 bg-[#FFC300] text-black py-2.5 rounded-full font-black text-xs">🔍 সার্চ করুন</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./add-product.js"></script>
+</body>
+  </html>
+  
