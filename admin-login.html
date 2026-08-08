@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Login</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-[#080808] min-h-screen flex items-center justify-center p-4">
+<div class="bg-[#121212] border border-white/10 p-8 rounded-2xl w-full max-w-sm text-center">
+  <div class="w-14 h-14 bg-[#FFC300] rounded-full mx-auto flex items-center justify-center font-black text-black text-xl">Zevi</div>
+  <h1 class="font-black text-xl mt-3 text-white">OWNER LOGIN</h1>
+  <p id="status" class="text-xs text-white/40 mt-2">লগইন করুন</p>
+  
+  <div id="loginForm">
+    <input id="email" value="kormosathiprints@gmail.com" class="w-full mt-6 bg-black border border-white/10 rounded-xl px-4 py-3.5 text-sm outline-none text-white">
+    <input id="password" type="password" placeholder="Password দিন" class="w-full mt-3 bg-black border border-white/10 rounded-xl px-4 py-3.5 text-sm outline-none text-white">
+    <button id="loginBtn" class="w-full bg-[#FFC300] text-black py-3.5 rounded-full font-black mt-4">লগইন</button>
+  </div>
+
+  <div id="loggedBox" class="hidden">
+    <p class="text-sm text-green-400 mt-6">✅ আপনি লগইন করা আছেন</p>
+    <button onclick="goDashboard()" class="w-full bg-white text-black py-3 rounded-full font-bold mt-3">ড্যাশবোর্ডে যান</button>
+    <button id="logoutBtn" class="w-full bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-full font-bold mt-2">লগআউট</button>
+  </div>
+
+  <p id="msg" class="text-xs mt-4 p-3 rounded-xl hidden"></p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyABqZpB_y5sU8I45rzOEG9l68yHyRGg1-o",
+  authDomain: "ks-prints.firebaseapp.com",
+  projectId: "ks-prints",
+  storageBucket: "ks-prints.firebasestorage.app",
+  messagingSenderId: "462253501320",
+  appId: "1:462253501320:web:c39b4379d4209675b7283d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const msg = document.getElementById('msg');
+const btn = document.getElementById('loginBtn');
+const loginForm = document.getElementById('loginForm');
+const loggedBox = document.getElementById('loggedBox');
+const status = document.getElementById('status');
+
+window.goDashboard = ()=> location.href="admin-dashboard.html";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    const snap = await getDoc(doc(db,"admins", user.uid));
+    if(snap.exists()){
+      // লগইন করা আছে
+      status.innerText = "সেশন সেভ আছে: " + user.email;
+      loginForm.classList.add('hidden');
+      loggedBox.classList.remove('hidden');
+      // চাইলে অটো রিডাইরেক্ট করবে না, বাটন চাপলে যাবে
+    }
+  }else{
+    status.innerText = "লগইন করুন";
+    loginForm.classList.remove('hidden');
+    loggedBox.classList.add('hidden');
+  }
+});
+
+btn.onclick = async ()=>{
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('password').value;
+  if(!pass) { msg.classList.remove('hidden'); msg.innerText = "Password দিন"; return; }
+  btn.innerText = "চেক হচ্ছে...";
+  try{
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    const snap = await getDoc(doc(db,"admins", cred.user.uid));
+    if(!snap.exists()) throw new Error("admins এ UID নেই");
+    location.href = "admin-dashboard.html";
+  }catch(e){
+    msg.classList.remove('hidden');
+    msg.className = "text-xs mt-4 p-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20";
+    msg.innerText = e.message;
+    btn.innerText = "লগইন";
+  }
+}
+
+document.getElementById('logoutBtn').onclick = async ()=>{
+  await signOut(auth);
+  location.reload();
+}
+</script>
+</body>
+</html>
