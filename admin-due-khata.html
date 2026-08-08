@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Due Khata - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Due Khata লোড হচ্ছে...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-hisab-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">বাকির খাতা</h1><p class="text-xs text-white/40">নামে ক্লিক = Full Details</p></div>
+  </div>
+  <button onclick="window.print()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">🖨️ Print</button>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28 space-y-4">
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-2xl text-center"><p class="text-xs text-white/40">মোট বাকি</p><p id="totalDueCount" class="text-2xl font-black mt-1">0 জন</p></div>
+    <div class="bg-[#121212] border border-red-500/30 p-4 rounded-2xl text-center"><p class="text-xs text-white/40">টাকা বাকি</p><p id="totalDueAmount" class="text-2xl font-black mt-1 text-red-400">৳0</p></div>
+    <div class="bg-[#121212] border border-orange-500/30 p-4 rounded-2xl text-center"><p class="text-xs text-white/40">Overdue</p><p id="overdueCount" class="text-2xl font-black mt-1 text-orange-400">0 জন</p></div>
+  </div>
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-4 space-y-3">
+    <input id="searchBox" onkeyup="filterDue()" placeholder="🔍 নাম / ফোন / Invoice সার্চ..." class="w-full bg-black border border-white/10 rounded-full px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="setFilter('all')" id="f-all" class="filterBtn bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">All</button>
+      <button onclick="setFilter('overdue')" id="f-overdue" class="filterBtn bg-red-500/20 text-red-400 px-4 py-2 rounded-full text-xs">🔴 Overdue</button>
+      <button onclick="setFilter('online')" id="f-online" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs">Online</button>
+      <button onclick="setFilter('offline')" id="f-offline" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs">Offline</button>
+    </div>
+  </div>
+  <div id="dueList" class="space-y-3"></div>
+  <div id="noDue" class="hidden bg-[#121212] border border-white/10 rounded-3xl p-10 text-center"><p class="text-4xl">✅</p><p class="font-black mt-2">কোনো বাকি নেই!</p></div>
+</div>
+
+<!-- DETAILS MODAL -->
+<div id="detailModal" class="hidden fixed inset-0 bg-black/90 flex items-start justify-center z-[99] p-4 overflow-y-auto">
+  <div class="bg-[#121212] border border-white/10 rounded-3xl w-full max-w-lg my-6 overflow-hidden">
+    <div class="p-5 border-b border-white/10 flex justify-between items-center">
+      <div><h3 id="dName" class="font-black text-lg">Name</h3><p id="dPhone" class="text-xs text-white/40"></p></div>
+      <button onclick="closeDetail()" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">✕</button>
+    </div>
+    <div class="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="bg-black rounded-2xl p-4 text-xs space-y-2">
+        <div class="flex justify-between"><span class="text-white/40">Invoice</span><span id="dOrderId" class="font-bold"></span></div>
+        <div class="flex justify-between"><span class="text-white/40">Type</span><span id="dType" class="font-bold"></span></div>
+        <div class="flex justify-between"><span class="text-white/40">Date</span><span id="dDate"></span></div>
+        <div class="flex justify-between"><span class="text-white/40">Address</span><span id="dAddress" class="text-right max-w-[180px] text-[11px]"></span></div>
+        <div class="flex justify-between"><span class="text-white/40">Delivery</span><span id="dDelType" class="font-bold"></span></div>
+      </div>
+      <div><p class="text-xs font-black mb-2">📦 কি কি নিয়েছে:</p><div id="dProducts" class="space-y-2"></div></div>
+      <div class="bg-black rounded-2xl p-3 text-xs space-y-2">
+        <div class="flex justify-between"><span class="text-white/40">SubTotal</span><span id="dSubTotal" class="font-bold">৳0</span></div>
+        <div class="flex justify-between"><span class="text-white/40">Custom</span><span id="dCustom" class="font-bold">৳0</span></div>
+        <div class="flex justify-between"><span class="text-[#FFC300]">Delivery</span><span id="dDelivery" class="font-black text-[#FFC300]">৳0</span></div>
+        <div class="border-t border-white/10 pt-2 flex justify-between font-black text-sm"><span>Total</span><span id="dTotal">৳0</span></div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs">
+        <div class="bg-black rounded-xl p-3 text-center"><p class="text-white/40">Total</p><p id="dTotal2" class="font-black text-lg mt-1">৳0</p></div>
+        <div class="bg-black rounded-xl p-3 text-center"><p class="text-white/40">Paid</p><p id="dPaid" class="font-black text-lg mt-1 text-green-400">৳0</p></div>
+        <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-center"><p class="text-red-300">Due</p><p id="dDue" class="font-black text-lg mt-1 text-red-400">৳0</p></div>
+      </div>
+      <div class="bg-black border border-white/10 rounded-2xl p-4">
+        <p class="text-xs font-black">⏰ Reminder সেট করো:</p>
+        <div class="flex gap-2 mt-3">
+          <input id="reminderDate" type="date" class="flex-1 bg-[#121212] border border-white/10 rounded-full px-4 py-2.5 text-xs">
+          <button onclick="saveReminder()" class="bg-[#FFC300] text-black px-5 py-2.5 rounded-full text-xs font-black">Set</button>
+        </div>
+        <p id="reminderStatus" class="text-xs mt-2"></p>
+      </div>
+      <!-- INVOICE & ACTION BUTTONS -->
+      <div class="grid grid-cols-4 gap-2">
+        <button onclick="openInvoiceFromDetail()" class="bg-blue-500/20 text-blue-400 py-3 rounded-full text-xs font-bold">📄 Invoice</button>
+        <a id="dCall" href="#" class="bg-white/10 py-3 rounded-full text-xs font-bold text-center">📞 Call</a>
+        <button onclick="sendWAFromDetail()" class="bg-green-500/20 text-green-400 py-3 rounded-full text-xs font-bold">💬 WA</button>
+        <button onclick="openCollectFromDetail()" class="bg-[#FFC300] text-black py-3 rounded-full text-xs font-black">💰 টাকা</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Collect Modal -->
+<div id="collectModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-6 w-full max-w-sm">
+    <h3 class="font-black">💰 টাকা জমা</h3>
+    <p id="modalCustomer" class="text-xs text-white/40 mt-1"></p>
+    <div class="mt-4 space-y-3">
+      <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex justify-between text-xs"><span class="text-red-300">Due বাকি</span><span id="modalDue" class="font-black text-red-400">৳0</span></div>
+      <input id="collectAmount" type="number" placeholder="কত টাকা নিচ্ছো?" class="w-full bg-black border border-white/10 rounded-full px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+      <div class="flex gap-2">
+        <button onclick="closeCollect()" class="flex-1 bg-white/10 py-3 rounded-full text-xs font-bold">Cancel</button>
+        <button onclick="confirmCollect()" class="flex-1 bg-[#FFC300] text-black py-3 rounded-full text-xs font-black">✅ জমা নাও</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+let allDue=[], filteredDue=[], currentFilter='all', currentDetail=null, currentCollect=null;
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return location.href='admin-login.html';
+  const snap = await getDoc(doc(db,"admins",user.uid));
+  if(!snap.exists()) return location.href='admin-login.html';
+  document.body.classList.remove('hidden');
+  document.getElementById('loading').classList.add('hidden');
+  loadDue();
+});
+
+async function loadDue(){
+  const [orderSnap, manualSnap] = await Promise.all([
+    getDocs(collection(db,"orders")),
+    getDocs(collection(db,"manual_sales"))
+  ]);
+  allDue=[];
+  orderSnap.forEach(d=>{
+    const data=d.data();
+    
+    // ক্যানসেলড অর্ডারগুলো বাকির খাতায় স্কিপ করার ফিল্টার
+    const orderStatus = (data.status || '').toLowerCase();
+    if(orderStatus === 'cancelled' || orderStatus === 'cancel') {
+      return;
+    }
+
+    const due=Number(data.due||data.remainingAmount||0);
+    if(due>0){
+      const deliveryCharge = Number(data.deliveryCharge || data.customer?.deliveryCharge || 0);
+      const customCharge = Number(data.customCharge || 0);
+      allDue.push({
+        id:d.id, coll:'orders', fullData:data,
+        name:data.customer?.name||data.customerName||'Customer',
+        phone:data.customer?.phone||data.phone||'',
+        address:data.customer?.address||'',
+        total:Number(data.total||0),
+        subTotal: Number(data.subTotal||0),
+        paid:Number(data.paid||data.advanceAmount||0),
+        due, delivery: deliveryCharge, custom: customCharge,
+        deliveryType: data.customer?.deliveryType || '',
+        date:data.createdAt?.toDate?.().toLocaleDateString('bn-BD')||'',
+        rawDate:data.createdAt?.toDate()||new Date(),
+        type:'online', orderId:data.orderId||d.id.slice(0,6),
+        items:data.items||[], reminderDate:data.reminderDate||null,
+        search:(data.customer?.name+' '+data.customer?.phone).toLowerCase()
+      });
+    }
+  });
+  manualSnap.forEach(d=>{
+    const data=d.data();
+    const due=Number(data.due||0);
+    if(due>0){
+      const customerMap = data.customer || {};
+      const deliveryCharge = Number(data.deliveryCharge || customerMap.deliveryCharge || 0);
+      const customCharge = Number(data.customCharge || 0);
+      const name = customerMap.name || data.custName || 'Customer';
+      const phone = customerMap.phone || data.custPhone || '';
+      const address = customerMap.address || '';
+      const deliveryType = customerMap.deliveryType || 'home';
+      allDue.push({
+        id:d.id, coll:'manual_sales', fullData:data,
+        name, phone, address, deliveryType,
+        total:Number(data.total||0),
+        subTotal: Number(data.subTotal||0),
+        paid:Number(data.paid||0),
+        due, delivery: deliveryCharge, custom: customCharge,
+        date:data.date? new Date(data.date).toLocaleDateString('bn-BD') : '',
+        rawDate:data.date? new Date(data.date) : new Date(),
+        type:'offline',
+        orderId:data.invoiceNo || d.id.slice(0,6),
+        items:data.items||[], barcodes:data.barcodes||[],
+        reminderDate:data.reminderDate||null,
+        search:(name+' '+phone+' '+(data.invoiceNo||'')).toLowerCase()
+      });
+    }
+  });
+  allDue.sort((a,b)=>b.due-a.due);
+  filteredDue=[...allDue];
+  render();
+}
+
+function render(){
+  const totalDue = filteredDue.reduce((a,b)=>a+b.due,0);
+  const overdueList = allDue.filter(o=> isOverdue(o.reminderDate));
+  document.getElementById('totalDueCount').innerText=filteredDue.length+' জন';
+  document.getElementById('totalDueAmount').innerText='৳'+totalDue;
+  document.getElementById('overdueCount').innerText=overdueList.length+' জন';
+  const listEl=document.getElementById('dueList');
+  const noEl=document.getElementById('noDue');
+  if(filteredDue.length===0){ listEl.innerHTML=''; noEl.classList.remove('hidden'); return; }
+  noEl.classList.add('hidden');
+
+  listEl.innerHTML = filteredDue.map(o=>{
+    const overdue = isOverdue(o.reminderDate);
+    const days=Math.floor((new Date()-o.rawDate)/(1000*60*60*24));
+    const borderClass = overdue? 'border-red-500 bg-red-500/10' : o.reminderDate? 'border-yellow-500/50' : 'border-white/10';
+    const avatar = o.name.charAt(0).toUpperCase();
+    return `
+    <div class="bg-[#121212] border-2 ${borderClass} rounded-3xl p-4">
+      <div class="flex gap-3">
+        <div class="w-12 h-12 ${overdue?'bg-red-500':'bg-[#FFC300]'} text-black rounded-full flex items-center justify-center font-black text-lg shrink-0">${avatar}</div>
+        <div class="flex-1 min-w-0 cursor-pointer" onclick="openDetail('${o.id}','${o.coll}')">
+          <p class="font-black text-sm truncate">👤 ${o.name} <span class="text-[10px] bg-white/10 px-2 py-1 rounded-full ml-1">${o.type.toUpperCase()}</span></p>
+          <p class="text-xs text-white/60 mt-0.5 truncate">📞 ${o.phone||'No Phone'} | ${o.orderId} | 🚚 ${o.deliveryType} ৳${o.delivery}</p>
+          <p class="text-[10px] text-white/30 truncate">📍 ${o.address||'Address নাই'} | ${days} দিন আগে</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="text-[10px] text-white/40">Due</p>
+          <p class="text-xl font-black ${overdue?'text-red-500':'text-red-400'}">৳${o.due}</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="openInvoice('${o.id}','${o.coll}')" class="bg-blue-500/20 text-blue-400 px-3 py-2.5 rounded-full text-xs font-bold">📄 Invoice</button>
+        <button onclick="openDetail('${o.id}','${o.coll}')" class="flex-1 bg-white/10 py-2.5 rounded-full text-xs font-bold">👁️ Details</button>
+        <button onclick="openCollect('${o.id}','${o.coll}')" class="flex-1 bg-[#FFC300] text-black py-2.5 rounded-full text-xs font-black">💰 টাকা নাও</button>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function isOverdue(dateStr){ if(!dateStr) return false; const rem=new Date(dateStr); const today=new Date(); today.setHours(0,0,0,0); rem.setHours(0,0,0,0); return rem < today; }
+
+window.openDetail=(id,coll)=>{
+  const o=allDue.find(x=>x.id===id && x.coll===coll); if(!o) return; currentDetail=o;
+  document.getElementById('dName').innerText=o.name;
+  document.getElementById('dPhone').innerText='📞 '+o.phone+' | '+o.orderId;
+  document.getElementById('dOrderId').innerText=o.orderId;
+  document.getElementById('dType').innerText=o.type.toUpperCase();
+  document.getElementById('dDate').innerText=o.date;
+  document.getElementById('dAddress').innerText=o.address||'N/A';
+  document.getElementById('dDelType').innerText=(o.deliveryType||'home')+' - ৳'+o.delivery;
+  const calcSub = o.subTotal || (o.total - (o.delivery||0) - (o.custom||0));
+  document.getElementById('dSubTotal').innerText='৳'+calcSub;
+  document.getElementById('dCustom').innerText='৳'+(o.custom||0);
+  document.getElementById('dDelivery').innerText='৳'+(o.delivery||0);
+  document.getElementById('dTotal').innerText='৳'+o.total;
+  document.getElementById('dTotal2').innerText='৳'+o.total;
+  document.getElementById('dPaid').innerText='৳'+o.paid;
+  document.getElementById('dDue').innerText='৳'+o.due;
+  document.getElementById('dCall').href='tel:'+o.phone;
+  document.getElementById('reminderDate').value=o.reminderDate||'';
+  const overdue=isOverdue(o.reminderDate);
+  document.getElementById('reminderStatus').innerHTML=overdue?'<span class="text-red-400 font-bold">🔴 Overdue!</span>':o.reminderDate?'<span class="text-green-400">✅ Reminder: '+new Date(o.reminderDate).toLocaleDateString('bn-BD')+'</span>':'<span class="text-white/30">কোনো Reminder নাই</span>';
+  let prodHtml='';
+  if(o.fullData.items && o.fullData.items.length>0){
+    prodHtml=o.fullData.items.map(it=>`
+      <div class="bg-black border border-white/5 rounded-xl p-3 flex justify-between text-xs">
+        <div><p class="font-bold">${it.category||''} - ${it.barcode||''}</p><p class="text-white/40 text-[10px] mt-1">Buy: ৳${it.buyPrice||0} | Charge: ৳${it.chargePerPc||0}</p><p class="text-[10px] text-white/30">Barcodes: ${it.barcodes?.join(', ')||it.barcode||''}</p></div>
+        <div class="text-right"><p class="font-bold">৳${it.price||it.sellPrice||0}</p></div>
+      </div>
+    `).join('');
+  } else if(o.barcodes && o.barcodes.length>0){
+    prodHtml=o.barcodes.map(b=>`<div class="bg-black rounded-xl p-2 text-xs">🔖 ${b}</div>`).join('');
+  } else prodHtml='<p class="text-white/30 text-xs">No Product</p>';
+  document.getElementById('dProducts').innerHTML=prodHtml;
+  document.getElementById('detailModal').classList.remove('hidden');
+}
+window.closeDetail=()=>{ document.getElementById('detailModal').classList.add('hidden'); currentDetail=null; }
+
+window.openInvoice=(id,coll)=>{
+  window.location.href = `invoice.html?id=${id}&coll=${coll}`;
+}
+
+window.openInvoiceFromDetail=()=>{
+  if(!currentDetail) return;
+  window.location.href = `invoice.html?id=${currentDetail.id}&coll=${currentDetail.coll}`;
+}
+
+window.saveReminder=async()=>{
+  const dateVal=document.getElementById('reminderDate').value; if(!dateVal) return alert('তারিখ দাও'); if(!currentDetail) return;
+  try{ await updateDoc(doc(db,currentDetail.coll,currentDetail.id),{reminderDate:dateVal}); alert('✅ Reminder Set'); currentDetail.reminderDate=dateVal; const idx=allDue.findIndex(x=>x.id===currentDetail.id); if(idx>=0) allDue[idx].reminderDate=dateVal; render(); closeDetail(); }catch(e){ alert(e.message); }
+}
+window.filterDue=()=>{
+  const q=document.getElementById('searchBox').value.toLowerCase(); let list=[...allDue];
+  if(currentFilter==='online') list=list.filter(o=>o.type==='online');
+  if(currentFilter==='offline') list=list.filter(o=>o.type==='offline');
+  if(currentFilter==='overdue') list=list.filter(o=>isOverdue(o.reminderDate));
+  if(q) list=list.filter(o=> o.search.includes(q) || o.phone.includes(q) || o.name.toLowerCase().includes(q));
+  filteredDue=list; render();
+}
+window.setFilter=(f)=>{
+  currentFilter=f; document.querySelectorAll('.filterBtn').forEach(b=>{b.classList.remove('bg-[#FFC300]','text-black','bg-red-500','text-white'); b.classList.add('bg-white/10');});
+  const el=document.getElementById('f-'+f); if(f==='overdue'){ el.classList.add('bg-red-500','text-white'); } else { el.classList.add('bg-[#FFC300]','text-black'); } el.classList.remove('bg-white/10'); filterDue();
+}
+window.openCollect=(id,coll)=>{
+  const o=allDue.find(x=>x.id===id && x.coll===coll); if(!o) return; currentCollect=o;
+  document.getElementById('modalCustomer').innerText=o.name+' | '+o.phone+' (Delivery ৳'+o.delivery+')';
+  document.getElementById('modalDue').innerText='৳'+o.due; document.getElementById('collectAmount').value=''; document.getElementById('collectModal').classList.remove('hidden');
+}
+window.closeCollect=()=>{ document.getElementById('collectModal').classList.add('hidden'); currentCollect=null; }
+window.openCollectFromDetail=()=>{ if(!currentDetail) return; closeDetail(); setTimeout(()=>openCollect(currentDetail.id,currentDetail.coll),300); }
+window.confirmCollect=async()=>{
+  const amt=Number(document.getElementById('collectAmount').value); if(!amt||amt<=0) return alert('টাকা দাও'); if(amt>currentCollect.due) return alert('বেশি! Due: ৳'+currentCollect.due);
+  try{ const newPaid=currentCollect.paid+amt; const newDue=currentCollect.due-amt; await updateDoc(doc(db,currentCollect.coll,currentCollect.id),{paid:newPaid, due:newDue, remainingAmount:newDue}); alert('✅ জমা! বাকি: ৳'+newDue); closeCollect(); loadDue(); }catch(e){ alert(e.message); }
+}
+window.sendWA=(phone,name,due)=>{ window.open(`https://wa.me/88${phone}?text=${encodeURIComponent(`Assalamu Alaikum ${name} ভাই, Zevi Hub থেকে বলছি। আপনার ৳${due} টাকা বাকি আছে।`)}`,'_blank'); }
+window.sendWAFromDetail=()=>{ if(currentDetail) sendWA(currentDetail.phone,currentDetail.name,currentDetail.due); }
+</script>
+</body>
+</html>
