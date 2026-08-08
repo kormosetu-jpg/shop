@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Barcode Print - Zevi Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<style>
+  @page{size:A4; margin:5mm}
+  body{margin:0; font-family:sans-serif; background:white; color:black}
+ .top-bar{position:sticky; top:0; background:#121212; color:white; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; z-index:10}
+ .top-bar button{background:#FFC300; color:black; border:none; padding:10px 20px; border-radius:99px; font-weight:bold; cursor:pointer}
+ .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:5mm}
+ .sticker{border:1.5px solid black; padding:6px; height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; background:white}
+ .sticker p{margin:0; line-height:1.1}
+ .s-barcode{font-size:9px; font-weight:900}
+ .s-info{font-size:7px; margin-top:2px}
+ .sticker svg{width:100%; height:38px; margin-top:2px; display:block}
+ .rack-label{width:360px; margin:40px auto; border:3px dashed black; padding:24px; text-align:center}
+ .rack-label h1{font-size:42px; margin:0}
+ .page-break{page-break-after:always}
+  @media print{
+   .top-bar{display:none!important}
+    body{padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <span id="info">লোড হচ্ছে...</span>
+  <button onclick="window.print()">🖨️ Print</button>
+</div>
+<div id="root"></div>
+
+<script>
+  const data = JSON.parse(localStorage.getItem('ks_barcode_data') || '{}');
+  const root = document.getElementById('root');
+  const info = document.getElementById('info');
+
+  if(!data.type){
+    root.innerHTML = '<p style="text-align:center; padding:40px">কোন ডাটা পাওয়া যায়নি। Inbound পেজ থেকে আবার প্রিন্ট বাটনে ক্লিক করুন।</p>';
+  } else if(data.type==='rack'){
+    info.innerText = `Rack Label: ${data.rack} - ${data.productName}`;
+    root.innerHTML = `
+      <div class="rack-label">
+        <h1>📦 ${data.rack}</h1>
+        <p><b>${data.productName}</b></p>
+        <p>Style: ${data.styleNo} | IN: ${data.inId}</p>
+        <p>সব রাক: ${data.allRacks}</p>
+        <p>${data.sizes}</p>
+        <svg id="bc"></svg>
+        <p style="font-size:12px; margin-top:6px">${data.styleNo}</p>
+      </div>`;
+    setTimeout(()=>{
+      JsBarcode("#bc", data.styleNo, {format:"CODE128", width:2, height:60, displayValue:false});
+    },300);
+  } else {
+    info.innerText = `মোট ${data.stickers.length} টা স্টিকার - ${data.productName}`;
+    let html = '<div class="grid">';
+    data.stickers.forEach((se, idx)=>{
+      html+= `<div class="sticker"><p class="s-barcode">${se.barcode}</p><svg id="s${idx}"></svg><p class="s-info">${data.productName} | ${se.size} | ${data.rack}</p></div>`;
+      if((idx+1)%44===0 && idx!==data.stickers.length-1) html+='</div><div class="page-break"></div><div class="grid">';
+    });
+    html+='</div>';
+    root.innerHTML = html;
+
+    (async()=>{
+      for(let i=0;i<data.stickers.length;i++){
+        try{ JsBarcode(document.getElementById(`s${i}`), data.stickers[i].barcode, {format:"CODE128", width:1.3, height:32, displayValue:false, margin:0}); }catch(e){}
+        if(i%60===0) await new Promise(r=>setTimeout(r,20));
+      }
+      info.innerText = `${data.stickers.length} টা রেডি ✅ প্রিন্ট দিন`;
+    })();
+  }
+</script>
+</body>
+</html>
