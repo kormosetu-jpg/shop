@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sell Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Checking Admin...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Sell Dashboard</h1><p class="text-xs text-white/40">অনলাইন + দোকান বিক্রি - Full Hisab</p></div>
+  </div>
+  <button id="logoutBtn" class="bg-white/10 px-4 py-2 rounded-full text-xs font-bold">Logout</button>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28">
+
+  <!-- ✅ NEW: Full Calculation Grid -->
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><p class="text-xs text-white/40">মোট অর্ডার (অনলাইন)</p><p id="totalOrders" class="text-3xl font-black mt-2">0</p><p id="pendingText" class="text-xs text-yellow-400 mt-2">0 পেন্ডিং | 0 Processing</p></div>
+    <div class="bg-[#121212] border border-green-500/20 p-5 rounded-3xl"><p class="text-xs text-white/40">Delivered (Online)</p><p id="deliveredCount" class="text-3xl font-black mt-2 text-green-400">0</p><p class="text-xs text-white/30 mt-2">সম্পন্ন</p></div>
+
+    <div class="bg-[#FFC300] p-5 rounded-3xl text-black col-span-2">
+      <div class="flex justify-between items-start">
+        <div><p class="text-xs opacity-60">Online Product Sell (Delivered)</p><p id="onlineProductSell" class="text-3xl font-black mt-2">৳0</p><p class="text-xs opacity-60 mt-1">শুধু প্রোডাক্টের দাম</p></div>
+        <div class="text-right"><p class="text-xs opacity-60">Online Delivery Income</p><p id="onlineDeliveryIncome" class="text-xl font-black mt-2">৳0</p><p class="text-xs opacity-60">ডেলিভারি চার্জ</p></div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-black/10 flex justify-between text-xs font-bold"><span>Online Total Income</span><span id="onlineTotalIncome" class="text-lg">৳0</span></div>
+    </div>
+
+    <div class="bg-[#121212] border border-[#FFC300]/30 p-5 rounded-3xl col-span-2">
+      <div class="flex justify-between items-start">
+        <div><p class="text-xs text-white/40">দোকান বিক্রি (Offline) - Product</p><p id="offlineProductSell" class="text-3xl font-black mt-2 text-[#FFC300]">৳0</p><p id="offlineCount" class="text-xs text-white/30 mt-1">0 টা সেল</p></div>
+        <div class="text-right"><p class="text-xs text-white/40">Offline Delivery</p><p id="offlineDeliveryIncome" class="text-xl font-black mt-2 text-white">৳0</p><p class="text-xs text-white/30">হোম ডেলিভারি</p></div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-white/10 flex justify-between text-xs font-bold"><span class="text-white/60">Offline Total Income</span><span id="offlineTotalIncome" class="text-lg text-[#FFC300]">৳0</span></div>
+    </div>
+
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><p class="text-xs text-white/40">সব মিলে Product Sell</p><p id="grandProductSell" class="text-2xl font-black mt-2 text-white">৳0</p><p class="text-xs text-white/30 mt-1">Online + Offline Product</p></div>
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><p class="text-xs text-white/40">সব মিলে Delivery Income</p><p id="grandDeliveryIncome" class="text-2xl font-black mt-2 text-[#FFC300]">৳0</p><p class="text-xs text-white/30 mt-1">Online + Offline</p></div>
+
+    <div class="bg-white text-black p-5 rounded-3xl col-span-2 flex justify-between items-center">
+      <div><p class="text-xs opacity-60">GRAND TOTAL (সব বিক্রি)</p><p id="grandTotal" class="text-4xl font-black mt-2">৳0</p><p class="text-xs opacity-60 mt-1">Product + Delivery - সব</p></div>
+      <div class="text-right"><p class="text-xs opacity-60">মোট জমা / বাকি</p><p id="grandPaid" class="text-sm font-black mt-1">Paid ৳0</p><p id="grandDue" class="text-sm font-bold text-red-600">Due ৳0</p></div>
+    </div>
+
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-3xl"><p class="text-xs text-white/40">ক্যানসেল</p><p id="cancelCount" class="text-2xl font-black mt-1 text-red-400">0</p></div>
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-3xl"><p class="text-xs text-white/40">মোট Paid</p><p id="totalPaid" class="text-2xl font-black mt-1 text-green-400">৳0</p></div>
+  </div>
+
+  <div class="mt-8">
+    <a href="admin-manual-sell.html" class="bg-white text-black p-6 rounded-3xl flex items-center justify-between hover:bg-white/90 border-2 border-dashed border-black/20">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center text-2xl">🏪</div>
+        <div><p class="font-black text-lg">দোকানের বিক্রি এন্ট্রি</p><p class="text-xs opacity-60">Manual / Offline Sell - ক্যাশ বিক্রি যোগ করুন</p></div>
+      </div>
+      <span class="bg-black text-white px-4 py-2 rounded-full text-xs font-black">+ Add →</span>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mt-4">
+    <a href="admin-orders.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl flex items-center gap-4"><div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-lg">🧾</div><div><p class="font-black text-sm">All Orders</p><p class="text-xs text-white/40">অনলাইন অর্ডার</p></div></a>
+    <a href="admin-manual-sales-list.html" class="bg-[#121212] border border-[#FFC300]/20 p-5 rounded-3xl flex items-center gap-4"><div class="w-12 h-12 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center text-lg">🏪</div><div><p class="font-black text-sm text-[#FFC300]">Offline Sales</p><p class="text-xs text-white/40">দোকানের লিস্ট</p></div></a>
+    <a href="admin-order-history.html" class="bg-[#121212] border border-green-500/20 p-5 rounded-3xl flex items-center gap-4"><div class="w-12 h-12 bg-green-500/20 text-green-400 rounded-2xl flex items-center justify-center text-lg">✓</div><div><p class="font-black text-sm text-green-400">Delivered</p><p class="text-xs text-white/40">হিস্ট্রি</p></div></a>
+    <a href="admin-hisab-dashboard.html" class="bg-[#FFC300] text-black p-5 rounded-3xl flex items-center gap-4 col-span-2"><div class="w-12 h-12 bg-black text-[#FFC300] rounded-2xl flex items-center justify-center text-lg">📊</div><div><p class="font-black text-sm">Hisab দেখুন</p><p class="text-xs opacity-70">লাভ-লস হিসাব</p></div></a>
+  </div>
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📦</span><span class="text-">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl bg-[#FFC300] text-black"><span class="text-lg">💰</span><span class="text- font-black">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">🛒</span><span class="text-">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">👥</span><span class="text-">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📊</span><span class="text-">Hisab</span></a>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){ location.href='admin-login.html'; return; }
+  try{
+    const snap = await getDoc(doc(db,"admins",user.uid));
+    if(!snap.exists()){ alert("⛔ আপনি Admin না!"); await signOut(auth); location.href='admin-login.html'; return; }
+    if(snap.data().role &&!['owner','admin','super_admin'].includes(snap.data().role)){ alert("⛔ Access Denied!"); await signOut(auth); location.href='admin-login.html'; return; }
+    document.getElementById('loading').classList.add('hidden');
+    document.body.classList.remove('hidden');
+    loadSell();
+  }catch(e){ console.error(e); location.href='admin-login.html'; }
+});
+
+async function loadSell(){
+  try{
+    // ===== ONLINE ORDERS =====
+    const snap = await getDocs(collection(db,"orders"));
+    let total=0, pending=0, processing=0, delivered=0, cancel=0;
+    let onlineProductSell=0, onlineDelivery=0, onlinePaid=0, onlineDue=0, onlineTotal=0;
+
+    snap.forEach(d=>{
+      const o = d.data();
+      const status = (o.status||'').toLowerCase().trim();
+      total++;
+
+      const deliveryCharge = Number(o.deliveryCharge||0);
+      const subTotal = o.subTotal!=null? Number(o.subTotal) : Number(o.total||0) - deliveryCharge;
+      const customCharge = Number(o.customCharge||0);
+      // Product Sell = subTotal + customCharge (Delivery বাদে)
+      const productSell = subTotal + customCharge;
+
+      if(['pending','new'].includes(status) || status==='') pending++;
+      if(['processing','confirmed','shipped','on_the_way'].includes(status)) processing++;
+      if(status==='cancelled') cancel++;
+
+      if(['delivered','completed'].includes(status)){
+        delivered++;
+        onlineProductSell += productSell >0? productSell : Number(o.total||0) - deliveryCharge;
+        onlineDelivery += deliveryCharge;
+        onlineTotal += Number(o.total||0);
+        onlinePaid += Number(o.paid||o.advanceAmount||o.total||0);
+        onlineDue += Number(o.due||o.remainingAmount||0);
+      }
+    });
+
+    // ===== OFFLINE MANUAL SALES =====
+    let offlineProductSell=0, offlineDelivery=0, offlineTotal=0, offlinePaid=0, offlineDue=0, offlineCount=0;
+    try{
+      const offSnap = await getDocs(collection(db,"manual_sales"));
+      offSnap.forEach(d=>{
+        const s = d.data();
+        const deliveryCharge = Number(s.deliveryCharge || s.customer?.deliveryCharge || s.items?.[0]?.deliveryCharge || 0);
+        const totalAmt = Number(s.total||0);
+        const productSell = totalAmt - deliveryCharge;
+
+        offlineProductSell += productSell;
+        offlineDelivery += deliveryCharge;
+        offlineTotal += totalAmt;
+        offlinePaid += Number(s.paid||0);
+        offlineDue += Number(s.due||0);
+        offlineCount++;
+      });
+    }catch(e){ console.log("offline err", e); }
+
+    // ===== UI UPDATE =====
+    document.getElementById('totalOrders').innerText = total;
+    document.getElementById('pendingText').innerText = `${pending} পেন্ডিং | ${processing} Processing`;
+    document.getElementById('deliveredCount').innerText = delivered;
+    document.getElementById('cancelCount').innerText = cancel;
+
+    document.getElementById('onlineProductSell').innerText = '৳'+onlineProductSell;
+    document.getElementById('onlineDeliveryIncome').innerText = '৳'+onlineDelivery;
+    document.getElementById('onlineTotalIncome').innerText = '৳'+onlineTotal;
+
+    document.getElementById('offlineProductSell').innerText = '৳'+offlineProductSell;
+    document.getElementById('offlineDeliveryIncome').innerText = '৳'+offlineDelivery;
+    document.getElementById('offlineTotalIncome').innerText = '৳'+offlineTotal;
+    document.getElementById('offlineCount').innerText = `${offlineCount} টা সেল`;
+
+    document.getElementById('grandProductSell').innerText = '৳'+(onlineProductSell+offlineProductSell);
+    document.getElementById('grandDeliveryIncome').innerText = '৳'+(onlineDelivery+offlineDelivery);
+    document.getElementById('grandTotal').innerText = '৳'+(onlineTotal+offlineTotal);
+    document.getElementById('grandPaid').innerText = 'Paid ৳'+(onlinePaid+offlinePaid);
+    document.getElementById('grandDue').innerText = 'Due ৳'+(onlineDue+offlineDue);
+    document.getElementById('totalPaid').innerText = '৳'+(onlinePaid+offlinePaid);
+
+  }catch(e){ console.log(e); }
+}
+
+document.getElementById('logoutBtn').onclick = async ()=>{ await signOut(auth); location.href='admin-login.html'; };
+history.pushState(null, null, location.href);
+window.onpopstate = ()=>{ history.go(1); };
+</script>
+</body>
+</html>
