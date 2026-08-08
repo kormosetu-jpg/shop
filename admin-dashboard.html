@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Dashboard লোড হচ্ছে...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <div class="w-9 h-9 bg-[#FFC300] rounded-full flex items-center justify-center font-black text-black">Zevi</div>
+    <div><h1 class="font-black leading-none">Zevi Hub</h1><p id="adminEmail" class="text-xs text-white/40">Owner Panel</p></div>
+  </div>
+  <div class="flex gap-2">
+    <a href="admin-hisab-dashboard.html" class="bg-[#FFC300] text-black w-9 h-9 rounded-full flex items-center justify-center font-black">৳</a>
+    <button id="logoutBtn" class="bg-white/10 px-4 py-2 rounded-full text-xs font-bold">লগআউট</button>
+  </div>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28 space-y-6">
+  <div>
+    <h2 class="font-black text-xl">Admin Dashboard</h2>
+    <p class="text-xs text-white/30 mt-1">সব হিসাব আলাদা আলাদা ম্যানেজ করুন • <span id="todayDate"></span></p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-3 text-center">
+      <p class="text-[10px] text-red-400">বাকি</p>
+      <p id="dueAlert" class="font-black text-lg text-red-400">৳0</p>
+      <p id="dueAlertCount" class="text-[10px] text-white/30">0 জন</p>
+    </div>
+    <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-3 text-center">
+      <p class="text-[10px] text-yellow-400">Low Stock</p>
+      <p id="lowStockAlert" class="font-black text-lg text-[#FFC300]">0</p>
+      <p class="text-[10px] text-white/30">10 pcs এর নিচে</p>
+    </div>
+    <div class="bg-green-500/10 border border-green-500/20 rounded-2xl p-3 text-center">
+      <p class="text-[10px] text-green-400">আজকের Sell</p>
+      <p id="todaySell" class="font-black text-lg text-green-400">৳0</p>
+      <p id="todaySellCount" class="text-[10px] text-white/30">0 টা</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="admin-product-dashboard.html" class="bg-[#121212] border border-white/10 p-6 rounded-3xl hover:border-[#FFC300]/50 transition">
+      <div class="flex justify-between items-start">
+        <div class="w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center text-xl">📦</div>
+        <span class="bg-white/10 px-3 py-1 rounded-full text-xs">→</span>
+      </div>
+      <h3 class="font-black text-lg mt-4">Product Dashboard</h3>
+      <p class="text-xs text-white/40 mt-1">লাইভ প্রোডাক্ট, স্টক, Inbound</p>
+      <p id="totalProducts" class="text-2xl font-black mt-3">0 টা প্রোডাক্ট</p>
+      <p id="stockValue" class="text-xs text-white/30">Stock Value ৳0</p>
+    </a>
+    <a href="admin-sell-dashboard.html" class="bg-[#FFC300] p-6 rounded-3xl text-black hover:bg-[#ffcc33] transition">
+      <div class="flex justify-between items-start">
+        <div class="w-12 h-12 bg-black text-[#FFC300] rounded-2xl flex items-center justify-center text-xl">💰</div>
+        <span class="bg-black/10 px-3 py-1 rounded-full text-xs font-bold">→</span>
+      </div>
+      <h3 class="font-black text-lg mt-4">Sell Dashboard</h3>
+      <p class="text-xs opacity-60 mt-1">অর্ডার, Delivered, Revenue</p>
+      <p id="totalOrders" class="text-2xl font-black mt-3">0 টা অর্ডার</p>
+      <p id="totalSellAmount" class="text-xs opacity-60">Sell ৳0</p>
+    </a>
+    <a href="admin-buy-dashboard.html" class="bg-[#121212] border border-white/10 p-6 rounded-3xl hover:border-[#FFC300]/50 transition">
+      <div class="flex justify-between items-start">
+        <div class="w-12 h-12 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center text-xl">🛒</div>
+        <span class="bg-white/10 px-3 py-1 rounded-full text-xs">→</span>
+      </div>
+      <h3 class="font-black text-lg mt-4">Buy Dashboard</h3>
+      <p class="text-xs text-white/40 mt-1">কেনা, খরচ, স্টক ভ্যালু</p>
+      <p id="totalBuy" class="text-2xl font-black mt-3">৳0 খরচ</p>
+      <p id="totalBuyQty" class="text-xs text-white/30">0 pcs কেনা</p>
+    </a>
+    <a href="admin-employee-dashboard.html" class="bg-[#121212] border border-white/10 p-6 rounded-3xl hover:border-[#FFC300]/50 transition">
+      <div class="flex justify-between items-start">
+        <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">👥</div>
+        <span class="bg-white/10 px-3 py-1 rounded-full text-xs">→</span>
+      </div>
+      <h3 class="font-black text-lg mt-4">Employee Dashboard</h3>
+      <p class="text-xs text-white/40 mt-1">কাস্টমার, এমপ্লয়ী</p>
+      <p id="totalCustomers" class="text-2xl font-black mt-3">0 জন</p>
+    </a>
+    <a href="admin-hisab-dashboard.html" class="bg-gradient-to-br from-[#121212] to-[#1a1a1a] border border-[#FFC300]/30 p-6 rounded-3xl hover:border-[#FFC300] transition md:col-span-2">
+      <div class="flex justify-between items-start">
+        <div class="w-12 h-12 bg-[#FFC300] text-black rounded-2xl flex items-center justify-center text-xl font-black">📊</div>
+        <span class="bg-[#FFC300] text-black px-3 py-1 rounded-full text-xs font-black">Live →</span>
+      </div>
+      <h3 class="font-black text-lg mt-4">Hisab Dashboard</h3>
+      <p class="text-xs text-white/40 mt-1">লাভ, লস, মোট হিসাব</p>
+      <div class="flex justify-between items-end mt-3">
+        <p id="totalRevenue" class="text-2xl font-black text-[#FFC300]">৳0 লাভ</p>
+        <p id="totalExpense" class="text-xs text-white/30">খরচ ৳0</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <h3 class="font-black text-sm">⚡ Quick Actions</h3>
+    <div class="grid grid-cols-4 gap-3 mt-4">
+      <a href="inbound.html" class="bg-white/5 p-3 rounded-2xl text-center"><div class="text-xl">📥</div><p class="text-[10px] mt-1">Buy IN</p></a>
+      <a href="admin-orders.html" class="bg-white/5 p-3 rounded-2xl text-center"><div class="text-xl">🧾</div><p class="text-[10px] mt-1">New Order</p></a>
+      <a href="admin-expense.html" class="bg-white/5 p-3 rounded-2xl text-center"><div class="text-xl">💸</div><p class="text-[10px] mt-1">খরচ</p></a>
+      <a href="admin-master-invoice.html" class="bg-[#FFC300]/20 p-3 rounded-2xl text-center"><div class="text-xl">🧾</div><p class="text-[10px] mt-1 text-[#FFC300]">Invoice</p></a>
+    </div>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <div class="flex justify-between items-center"><h3 class="font-black text-sm">🕒 Recent Orders</h3><a href="admin-orders.html" class="text-xs text-[#FFC300]">সব দেখো</a></div>
+    <div id="recentOrders" class="mt-4 space-y-2 text-xs"><p class="text-white/30">লোড হচ্ছে...</p></div>
+  </div>
+
+  <h3 class="font-black text-lg">Settings & Tools</h3>
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    <a href="settings.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">⚙️</div><p class="font-black text-sm mt-3">General Settings</p><p class="text-xs text-white/30 mt-1">লোগো, সোশ্যাল লিংক</p></a>
+    <a href="coupons-admin.html" class="bg-[#121212] border border-[#FFC300]/20 p-5 rounded-3xl"><div class="w-10 h-10 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center">🎟️</div><p class="font-black text-sm mt-3 text-[#FFC300]">Coupons</p><p class="text-xs text-white/30 mt-1">কুপন তৈরি / ডিলিট</p></a>
+    <a href="admin-offers.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">🎁</div><p class="font-black text-sm mt-3">Offers</p><p class="text-xs text-white/30 mt-1">অফার ব্যানার</p></a>
+    <a href="admin-orders.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">📦</div><p class="font-black text-sm mt-3">All Orders</p><p class="text-xs text-white/30 mt-1">সব অর্ডার লিস্ট</p></a>
+    <a href="admin-products.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">👕</div><p class="font-black text-sm mt-3">Products</p><p class="text-xs text-white/30 mt-1">প্রোডাক্ট লিস্ট</p></a>
+    <a href="payment-admin.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">💵</div><p class="font-black text-sm mt-3">Admin payment</p><p class="text-xs text-white/30 mt-1">পেইমেন্ট</p></a>
+    <a href="delivery-admin.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">🚚</div><p class="font-black text-sm mt-3">Delivery Payment</p><p class="text-xs text-white/30 mt-1">ডেলিভারি পেমেন্ট</p></a>
+    <a href="admin-notifications.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">🔔</div><p class="font-black text-sm mt-3">Notifications</p><p class="text-xs text-white/30 mt-1">পুশ নোটিফিকেশন</p></a>
+    <a href="customers.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">👥</div><p class="font-black text-sm mt-3">Customers</p><p class="text-xs text-white/30 mt-1">ইউজার লিস্ট</p></a>
+    <a href="employee-list.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">📋</div><p class="font-black text-sm mt-3">Employee List</p><p class="text-xs text-white/30 mt-1">সব এমপ্লয়ী</p></a>
+    <a href="inbound.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl"><div class="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">📥</div><p class="font-black text-sm mt-3">Inbound</p><p class="text-xs text-white/30 mt-1">স্টক ইনবাউন্ড</p></a>
+  </div>
+
+  <p class="text-xs text-white/20 text-center mt-10">UID: <span id="uidShort"></span> • Zevi Hub v2.0</p>
+</div>
+
+<!-- ✅ FIXED: Dashboard এ কোনো হলুদ Active নাই, সব Gray -->
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60 hover:text-white"><span class="text-lg">📦</span><span class="text-[10px] font-bold">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60 hover:text-white"><span class="text-lg">💰</span><span class="text-[10px] font-bold">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60 hover:text-white"><span class="text-lg">🛒</span><span class="text-[10px] font-bold">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60 hover:text-white"><span class="text-lg">👥</span><span class="text-[10px] font-bold">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60 hover:text-white"><span class="text-lg">📊</span><span class="text-[10px] font-bold">Hisab</span></a>
+</div>
+
+<script type="module" src="./admin-dashboard.js"></script>
+</body>
+</html>
