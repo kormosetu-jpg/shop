@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cart - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}</style>
+</head>
+<body class="bg-[#080808] text-white min-h-screen">
+
+<header class="sticky top-0 z-50 bg-[#080808] border-b border-white/10">
+  <div class="max-w-5xl mx-auto px-3 h-14 flex items-center justify-between">
+    <button onclick="location.href='index.html'" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <h1 class="font-black text-sm tracking-widest">MY CART (<span id="cartCountHead">0</span>)</h1>
+    <div class="w-8"></div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-3 py-4 grid md:grid-cols-3 gap-6">
+  <div class="md:col-span-2 space-y-3">
+    <div id="cartList" class="space-y-3"></div>
+    <div id="emptyCart" class="hidden bg-[#121212] border border-white/10 rounded-2xl p-10 text-center">
+      <p class="text-4xl mb-3">🛒</p>
+      <p class="font-black mb-2">কার্ট খালি!</p>
+      <p class="text-xs text-white/40 mb-4">এখনো কোনো প্রোডাক্ট যোগ করোনি</p>
+      <button onclick="location.href='index.html'" class="bg-[#FFC300] text-black px-6 py-2.5 rounded-full font-black text-sm">শপিং করুন</button>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-4 space-y-3">
+      <h3 class="font-black text-sm">সামারি</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-white/50">সাবটোটাল (<span id="itemCount">0</span> আইটেম)</span><span id="subTotal" class="font-bold">0৳</span></div>
+        <div class="flex justify-between"><span class="text-white/50">ডেলিভারি</span><span id="deliveryFee" class="font-bold">70৳</span></div>
+        <div id="customChargeBox" class="hidden flex justify-between text-xs"><span class="text-white/50">কাস্টম চার্জ</span><span id="customCharge" class="font-bold">0৳</span></div>
+        <p id="freeInfo" class="hidden text-xs bg-[#FFC300]/10 border border-[#FFC300]/20 text-[#FFC300] px-3 py-2 rounded-xl"></p>
+      </div>
+      <div class="border-t border-white/10 pt-3 flex justify-between font-black"><span>মোট</span><span id="totalPay" class="text-[#FFC300]">0৳</span></div>
+      <button id="checkoutBtn" class="w-full bg-[#FFC300] text-black py-3.5 rounded-full font-black text-sm mt-2">চেকআউট করুন</button>
+      <button onclick="location.href='index.html'" class="w-full bg-white/10 text-white py-3 rounded-full font-bold text-sm">আরো শপিং করুন</button>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { db } from "./firebase.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let DELIVERY = { insideDhaka: 70, outsideDhaka: 130, freeMin: 2000, active: true };
+let cart = JSON.parse(localStorage.getItem('ks_cart')||'[]');
+
+const cartList = document.getElementById('cartList');
+const emptyCart = document.getElementById('emptyCart');
+const itemCount = document.getElementById('itemCount');
+const cartCountHead = document.getElementById('cartCountHead');
+const subTotalEl = document.getElementById('subTotal');
+const deliveryFeeEl = document.getElementById('deliveryFee');
+const totalPayEl = document.getElementById('totalPay');
+const customChargeBox = document.getElementById('customChargeBox');
+const customChargeEl = document.getElementById('customCharge');
+const freeInfo = document.getElementById('freeInfo');
+const checkoutBtn = document.getElementById('checkoutBtn');
+
+async function loadDelivery(){
+  try{
+    const snap = await getDoc(doc(db,"settings","delivery"));
+    if(snap.exists()){
+      const d = snap.data();
+      DELIVERY.insideDhaka = d.insideDhaka??70;
+      DELIVERY.outsideDhaka = d.outsideDhaka??130;
+      DELIVERY.freeMin = d.freeMin??2000;
+      DELIVERY.active = d.active!==false;
+      if(DELIVERY.freeMin>0){
+        freeInfo.classList.remove('hidden');
+        freeInfo.innerText = `🎉 ${DELIVERY.freeMin}৳+ অর্ডারে ডেলিভারি ফ্রি!`;
+      }
+    }
+  }catch(e){}
+  renderCart();
+}
+
+function renderCart(){
+  const totalPcs = cart.reduce((s,p)=> s + (p.customDetails?.items?.length || p.qty || p.quantity || 1), 0);
+  cartCountHead.innerText = totalPcs;
+  itemCount.innerText = totalPcs;
+
+  if(cart.length===0){
+    cartList.innerHTML = '';
+    emptyCart.classList.remove('hidden');
+    subTotalEl.innerText = '0৳';
+    deliveryFeeEl.innerText = '0৳';
+    totalPayEl.innerText = '0৳';
+    checkoutBtn.disabled = true;
+    checkoutBtn.classList.add('opacity-50');
+    customChargeBox.classList.add('hidden');
+    return;
+  }
+  emptyCart.classList.add('hidden');
+  checkoutBtn.disabled = false;
+  checkoutBtn.classList.remove('opacity-50');
+
+  let sub = 0;
+  let totalCustom = 0;
+
+  cartList.innerHTML = cart.map((p, i)=>{
+    // ✅ FIXED: Base + Custom আলাদা
+    let perCustom = 0;
+    let basePrice = 0;
+    let qty = p.customDetails?.items?.length || p.qty || p.quantity || 1;
+
+    if(p.isCustom || p.customDetails || p.custom){
+      perCustom = parseInt(p.customChargePerUnit || p.customCharge || 70);
+      if(p.basePrice) basePrice = parseInt(p.basePrice);
+      else basePrice = Math.max(0, parseInt(p.price||0) - perCustom);
+    } else {
+      basePrice = parseInt(p.basePrice || p.price || 0);
+    }
+
+    sub += (basePrice * qty);
+    totalCustom += (perCustom * qty);
+
+    // Custom HTML - নতুন সিস্টেম
+    let customHtml = '';
+    if(p.customDetails){
+      const cd = p.customDetails;
+      const players = cd.items || [];
+      if(players.length>0){
+        customHtml = `<div class="text-[11px] bg-[#FFC300]/10 border border-[#FFC300]/20 rounded-lg p-2 mt-1.5 space-y-1">
+          ${cd.teamName? `<p class="font-bold text-[#FFC300]">Team: ${cd.teamName}</p>` : ''}
+          ${players.map(pl=> `<p class="text-white/70">• ${pl.name||''} ${pl.number?`#${pl.number}`:''} (Size: ${pl.size||'M'})</p>`).join('')}
+        </div>`;
+      }
+    } else if(p.custom){
+      customHtml = `<div class="text-[11px] bg-[#FFC300]/10 border border-[#FFC300]/20 rounded-lg p-2 mt-1"><p>টিম: ${p.custom.teamName||''} | ${p.custom.name||''} #${p.custom.number||''} (${p.custom.size||'M'})</p></div>`;
+    }
+
+    const displayTotal = (basePrice + perCustom) * qty;
+
+    return `<div class="flex gap-3 bg-[#121212] border border-white/10 rounded-2xl p-3">
+      <img src="${p.imageUrl||p.images?.[0]||p.image||''}" class="w-16 h-16 bg-white rounded-xl object-contain shrink-0">
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between gap-2"><p class="text-xs font-bold line-clamp-1 flex-1">${p.productName||p.name}</p><button onclick="removeItem(${i})" class="w-6 h-6 bg-white/10 rounded-full text-[11px] flex items-center justify-center shrink-0">✕</button></div>
+        <p class="text-[11px] text-white/40 mt-0.5">Qty: ${qty} ${perCustom>0?`• Base ${basePrice}৳ + Custom ${perCustom}৳`:''}</p>
+        ${customHtml}
+        <div class="flex justify-between items-center mt-2"><span class="text-sm font-black text-[#FFC300]">${displayTotal}৳</span><span class="text-[11px] px-2.5 py-1 bg-white/10 rounded-full">${qty} pcs</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Delivery FREE Logic
+  const checkFree = sub + totalCustom;
+  let delivery = DELIVERY.active? DELIVERY.insideDhaka : 0;
+  if(DELIVERY.freeMin>0 && checkFree>=DELIVERY.freeMin) delivery = 0;
+
+  subTotalEl.innerText = sub+'৳';
+  deliveryFeeEl.innerText = delivery===0?'FREE':delivery+'৳';
+  
+  if(totalCustom>0){
+    customChargeBox.classList.remove('hidden');
+    customChargeEl.innerText = totalCustom+'৳';
+  }else{
+    customChargeBox.classList.add('hidden');
+  }
+
+  totalPayEl.innerText = (sub + delivery + totalCustom)+'৳';
+
+  if(delivery===0 && checkFree>=DELIVERY.freeMin && DELIVERY.freeMin>0){
+    freeInfo.classList.remove('hidden');
+    freeInfo.className = 'text-xs bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-2 rounded-xl';
+    freeInfo.innerText = `🎉 ${DELIVERY.freeMin}৳+ FREE Delivery Active!`;
+  } else if(DELIVERY.freeMin>0){
+    freeInfo.classList.remove('hidden');
+    freeInfo.className = 'text-xs bg-[#FFC300]/10 border border-[#FFC300]/20 text-[#FFC300] px-3 py-2 rounded-xl';
+    freeInfo.innerText = `🎉 ${DELIVERY.freeMin}৳+ অর্ডারে ডেলিভারি ফ্রি! আর ${DELIVERY.freeMin-checkFree}৳ বাকি`;
+  }
+}
+
+window.removeItem = (i)=>{
+  Swal.fire({
+    title: 'ডিলিট করবে?', background:'#121212', color:'#fff', showCancelButton:true,
+    confirmButtonColor:'#FFC300', cancelButtonColor:'#333', confirmButtonText:'হ্যাঁ', cancelButtonText:'না'
+  }).then(r=>{
+    if(r.isConfirmed){
+      cart.splice(i,1);
+      localStorage.setItem('ks_cart', JSON.stringify(cart));
+      renderCart();
+    }
+  });
+}
+
+checkoutBtn.onclick = ()=>{
+  if(cart.length===0) return;
+  localStorage.removeItem('ks_buy_now');
+  localStorage.removeItem('ks_checkout_items');
+  location.href='checkout.html';
+}
+
+loadDelivery();
+</script>
+</body>
+</html>
