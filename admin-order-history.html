@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order History - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}</style>
+</head>
+<body class="bg-[#080808] text-white min-h-screen hidden">
+<header class="sticky top-0 z-50 bg-[#080808]/90 backdrop-blur border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button onclick="location.href='admin-orders.html'" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center font-bold">←</button>
+      <h1 class="font-black text-sm md:text-base tracking-widest">ORDER HISTORY</h1>
+    </div>
+    <div class="flex gap-2">
+      <a href="admin-orders.html" class="bg-[#FFC300] text-black px-4 py-1.5 rounded-full text-xs font-bold">Active Orders</a>
+      <a href="admin-dashboard.html" class="bg-white/10 px-4 py-1.5 rounded-full text-xs font-bold">Dashboard</a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-5 space-y-4">
+
+  <!-- Date Filter - NEW -->
+  <div class="bg-[#121212] border border-[#FFC300]/20 rounded-2xl p-4 space-y-3">
+    <p class="text-xs font-bold">📅 তারিখ দিয়ে ফিল্টার</p>
+    <div class="flex flex-col md:flex-row gap-3">
+      <div class="flex-1 flex gap-2 items-center bg-black border border-white/10 rounded-full px-4">
+        <span class="text-[10px] text-white/40 shrink-0">FROM</span>
+        <input id="fromDate" type="date" class="flex-1 bg-transparent py-2.5 text-xs text-white outline-none">
+      </div>
+      <div class="flex-1 flex gap-2 items-center bg-black border border-white/10 rounded-full px-4">
+        <span class="text-[10px] text-white/40 shrink-0">TO</span>
+        <input id="toDate" type="date" class="flex-1 bg-transparent py-2.5 text-xs text-white outline-none">
+      </div>
+      <button onclick="filterByDate()" class="bg-[#FFC300] text-black px-6 py-2.5 rounded-full font-black text-xs">ফিল্টার</button>
+      <button onclick="resetDate()" class="bg-white/10 px-6 py-2.5 rounded-full font-bold text-xs">রিসেট</button>
+    </div>
+  </div>
+
+  <!-- Search + Status -->
+  <div class="bg-[#121212] border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row gap-3">
+    <input id="searchInput" type="text" placeholder="🔍 ফোন, ID, নাম দিয়ে সার্চ..." class="flex-1 bg-black border border-white/10 rounded-full px-4 py-2.5 text-sm outline-none focus:border-[#FFC300]">
+    <select id="statusFilter" class="bg-black border border-white/10 rounded-full px-4 py-2.5 text-xs outline-none">
+      <option value="all">সব History</option>
+      <option value="shipped">Shipped</option>
+      <option value="delivered">Delivered</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+    <button onclick="applyFilters()" class="bg-white/10 px-6 py-2.5 rounded-full font-bold text-xs">খুঁজুন</button>
+  </div>
+
+  <div id="ordersList" class="space-y-3"></div>
+  <div id="loadingBox" class="bg-[#121212] border border-white/10 rounded-2xl p-10 text-center text-white/60">লোড হচ্ছে...</div>
+  <div id="emptyBox" class="hidden bg-[#121212] border border-white/10 rounded-2xl p-10 text-center text-white/50">কোনো History নেই</div>
+</main>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+let allOrders=[], filteredOrders=[];
+
+// ✅ SECURITY - Owner check
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return location.href = "admin-login.html";
+  try {
+    const snap = await getDoc(doc(db, "admins", user.uid));
+    if (!snap.exists()) {
+      alert("আপনি Owner না!");
+      await signOut(auth);
+      return location.href = "admin-login.html";
+    }
+    document.body.classList.remove('hidden');
+    fetchHistory();
+  } catch (e) {
+    console.error(e);
+    document.body.classList.remove('hidden');
+    fetchHistory();
+  }
+});
+
+function formatDate(ts){ if(!ts) return ''; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleString('bn-BD'); }
+function statusColor(s){
+  s=(s||'').toLowerCase();
+  if(s==='shipped'||s==='on_the_way') return 'text-purple-400';
+  if(s==='delivered'||s==='completed') return 'text-green-400';
+  if(s==='cancelled') return 'text-red-400';
+  return 'text-white/40';
+}
+
+async function fetchHistory(){
+  document.getElementById('loadingBox').classList.remove('hidden');
+  document.getElementById('emptyBox').classList.add('hidden');
+  const q=query(collection(db,"orders"), where("status","in",["shipped","delivered","completed","cancelled","on_the_way"]));
+  let snap; try{ snap=await getDocs(q); }catch(e){ snap=await getDocs(collection(db,"orders")); }
+  allOrders=[]; snap.forEach(d=>{ const data=d.data(); const s=(data.status||'').toLowerCase(); if(['shipped','delivered','completed','cancelled','on_the_way'].includes(s)) allOrders.push({id:d.id,...data}); });
+  allOrders.sort((a,b)=> (b.deliveredAt?.seconds||b.shippedAt?.seconds||b.createdAt?.seconds||0)-(a.deliveredAt?.seconds||a.shippedAt?.seconds||a.createdAt?.seconds||0));
+  filteredOrders=[...allOrders];
+  document.getElementById('loadingBox').classList.add('hidden');
+  render();
+}
+
+function render(){
+  const list=document.getElementById('ordersList');
+  const empty=document.getElementById('emptyBox');
+  if(filteredOrders.length===0){ list.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML=filteredOrders.map(o=>{
+    const img=o.items?.[0]?.imageUrl||o.items?.[0]?.images?.[0]||'https://via.placeholder.com/100';
+    const date = formatDate(o.deliveredAt||o.shippedAt||o.createdAt);
+    return `<div class="bg-[#121212] border border-white/10 rounded-2xl p-4 flex gap-3 hover:border-white/20 transition">
+      <img src="${img}" class="w-14 h-14 bg-white rounded-xl object-contain shrink-0 border border-white/10">
+      <div class="flex-1 min-w-0">
+        <p class="font-mono text-xs font-black">#${o.id.slice(0,8).toUpperCase()} - <span class="${statusColor(o.status)}">${o.status?.toUpperCase()}</span></p>
+        <p class="font-bold text-sm mt-1 truncate">${o.customer?.name||''} - ${o.customer?.phone||''}</p>
+        <p class="text-xs text-white/40 mt-0.5">${date} | ${o.total||0}৳ | ${o.items?.length||0} আইটেম</p>
+      </div>
+      <a href="invoice.html?id=${o.id}" target="_blank" class="bg-white text-black px-3 py-1.5 rounded-full text-xs font-bold h-fit shrink-0">Invoice</a>
+    </div>`;
+  }).join('');
+}
+
+window.applyFilters=()=>{
+  const s=document.getElementById('searchInput').value.toLowerCase();
+  const st=document.getElementById('statusFilter').value;
+  filteredOrders=allOrders.filter(o=>{
+    const ms=!s||o.id.toLowerCase().includes(s)||o.customer?.phone?.includes(s)||o.customer?.name?.toLowerCase().includes(s);
+    const mt=st==='all'||(o.status||'').toLowerCase()===st||(st==='delivered'&&['delivered','completed'].includes((o.status||'').toLowerCase()))||(st==='shipped'&&['shipped','on_the_way'].includes((o.status||'').toLowerCase()));
+    return ms&&mt;
+  });
+  render();
+}
+
+window.filterByDate=()=>{
+  const from=document.getElementById('fromDate').value;
+  const to=document.getElementById('toDate').value;
+  if(!from &&!to) return alert('তারিখ সিলেক্ট করুন');
+
+  filteredOrders=allOrders.filter(o=>{
+    const d=o.deliveredAt||o.shippedAt||o.createdAt;
+    if(!d) return false;
+    const orderDate = d.toDate? d.toDate() : new Date(d);
+    const orderStr = orderDate.toISOString().split('T')[0];
+    let match=true;
+    if(from) match = match && orderStr >= from;
+    if(to) match = match && orderStr <= to;
+    return match;
+  });
+  render();
+}
+
+window.resetDate=()=>{
+  document.getElementById('fromDate').value='';
+  document.getElementById('toDate').value='';
+  document.getElementById('searchInput').value='';
+  document.getElementById('statusFilter').value='all';
+  filteredOrders=[...allOrders];
+  render();
+}
+
+document.getElementById('searchInput').addEventListener('input',applyFilters);
+document.getElementById('statusFilter').addEventListener('change',applyFilters);
+</script>
+</body>
+</html>
