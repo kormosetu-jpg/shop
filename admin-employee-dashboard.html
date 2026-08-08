@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Employee Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Checking Admin...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Employee Dashboard</h1><p class="text-xs text-white/40">এমপ্লয়ী ও কাস্টমার</p></div>
+  </div>
+  <button id="logoutBtn" class="bg-white/10 px-4 py-2 rounded-full text-xs font-bold">Logout</button>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28">
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <div class="bg-[#121212] border border-white/10 p-6 rounded-3xl">
+      <p class="text-xs text-white/40">মোট কাস্টমার</p>
+      <p id="customerCount" class="text-4xl font-black mt-3">0</p>
+      <p class="text-xs text-white/30 mt-2" id="customerSub">users</p>
+    </div>
+    <div class="bg-[#121212] border border-[#FFC300]/20 p-6 rounded-3xl">
+      <p class="text-xs text-white/40">মোট এমপ্লয়ী</p>
+      <p id="employeeCount" class="text-4xl font-black mt-3 text-[#FFC300]">0</p>
+      <p class="text-xs text-white/30 mt-2">employees</p>
+    </div>
+    <div class="bg-[#121212] border border-white/10 p-6 rounded-3xl">
+      <p class="text-xs text-white/40">আজকে যোগ</p>
+      <p id="activeToday" class="text-3xl font-black mt-3">0</p>
+      <p class="text-xs text-green-400 mt-2">● আজকে</p>
+    </div>
+    <div class="bg-[#121212] border border-white/10 p-6 rounded-3xl">
+      <p class="text-xs text-white/40">এই মাসে নতুন</p>
+      <p id="newCustomer" class="text-3xl font-black mt-3">0</p>
+      <p class="text-xs text-white/30 mt-2">এমপ্লয়ী</p>
+    </div>
+  </div>
+
+  <!-- Role Breakdown -->
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5 mt-6">
+    <p class="text-xs font-black text-[#FFC300]">ROLE BREAKDOWN</p>
+    <div id="roleBreak" class="grid grid-cols-3 gap-2 mt-3 text-xs"></div>
+  </div>
+
+  <!-- 2 বড় বাটন -->
+  <div class="grid grid-cols-1 gap-3 mt-6">
+    <a href="customers.html" class="bg-white text-black p-6 rounded-3xl flex items-center justify-between hover:bg-white/90">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center text-lg">👥</div>
+        <div><p class="font-black">Customers</p><p class="text-xs opacity-60" id="custBtnSub">সব কাস্টমার দেখুন</p></div>
+      </div>
+      <span class="bg-black/10 px-3 py-1 rounded-full text-xs font-bold">→</span>
+    </a>
+    <a href="employee-list.html" class="bg-[#121212] border border-[#FFC300]/30 p-6 rounded-3xl flex items-center justify-between hover:border-[#FFC300]">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center text-lg">👤</div>
+        <div><p class="font-black text-[#FFC300]">Employees</p><p class="text-xs text-white/40" id="empBtnSub">এমপ্লয়ী ম্যানেজমেন্ট</p></div>
+      </div>
+      <span class="bg-[#FFC300] text-black px-3 py-1 rounded-full text-xs font-black">→</span>
+    </a>
+    <a href="emply.html" class="bg-[#FFC300] text-black p-6 rounded-3xl flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-black/10 rounded-2xl flex items-center justify-center text-lg">＋</div>
+        <div><p class="font-black">Add Employee</p><p class="text-xs opacity-60">প্রোফাইল + NID সহ</p></div>
+      </div>
+      <span class="bg-black text-white px-3 py-1 rounded-full text-xs font-bold">Add</span>
+    </a>
+  </div>
+
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📦</span><span class="text-">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">💰</span><span class="text-">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">🛒</span><span class="text-">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl bg-[#FFC300] text-black"><span class="text-lg">👥</span><span class="text- font-black">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📊</span><span class="text-">Hisab</span></a>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){ location.href='admin-login.html'; return; }
+  try{
+    const snap = await getDoc(doc(db,"admins",user.uid));
+    if(!snap.exists()){ alert("⛔ আপনি Admin না!"); await signOut(auth); location.href='admin-login.html'; return; }
+    const role = snap.data().role || 'admin';
+    if(!['owner','admin','super_admin','manager'].includes(role)){ alert("⛔ Access Denied!"); await signOut(auth); location.href='admin-login.html'; return; }
+    document.getElementById('loading').classList.add('hidden');
+    document.body.classList.remove('hidden');
+    loadStats();
+  }catch(e){ console.error(e); location.href='admin-login.html'; }
+});
+
+async function loadStats(){
+  try{
+    // Customers
+    let custCount = 0;
+    try{
+      const custSnap = await getDocs(collection(db,"users"));
+      custCount = custSnap.size;
+    }catch{
+      try{ const c2 = await getDocs(collection(db,"customers")); custCount = c2.size; }catch{ custCount=0; }
+    }
+    document.getElementById('customerCount').innerText = custCount;
+    document.getElementById('custBtnSub').innerText = `${custCount} জন কাস্টমার`;
+
+    // Employees - এখন employees কালেকশন থেকে
+    const empSnap = await getDocs(collection(db,"employees"));
+    const emps = empSnap.docs.map(d=>d.data());
+    document.getElementById('employeeCount').innerText = empSnap.size;
+    document.getElementById('empBtnSub').innerText = `${empSnap.size} জন এমপ্লয়ী`;
+
+    // Today & This month
+    let todayCount=0, thisMonth=0;
+    const todayStr = new Date().toDateString();
+    const now = new Date();
+    const roleMap = {};
+
+    emps.forEach(e=>{
+      const cd = e.createdAt?.toDate? e.createdAt.toDate() : (e.createdAt? new Date(e.createdAt) : (e.joinDate? new Date(e.joinDate) : null));
+      if(cd){
+        if(cd.toDateString()===todayStr) todayCount++;
+        if(cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear()) thisMonth++;
+      }
+      const r = e.role||'unknown';
+      roleMap[r] = (roleMap[r]||0)+1;
+    });
+
+    document.getElementById('activeToday').innerText = todayCount;
+    document.getElementById('newCustomer').innerText = thisMonth;
+
+    // Role breakdown
+    const roleBox = document.getElementById('roleBreak');
+    roleBox.innerHTML = Object.keys(roleMap).length? Object.entries(roleMap).map(([k,v])=>`
+      <div class="bg-[#080808] rounded-2xl p-3 text-center">
+        <p class="font-black text-[#FFC300]">${v}</p><p class="text-white/40 mt-1">${k}</p>
+      </div>
+    `).join('') : '<p class="text-white/30 col-span-3 text-center">কোনো এমপ্লয়ী নেই</p>';
+
+  }catch(e){ console.log("Stats error:", e); }
+}
+
+document.getElementById('logoutBtn').onclick = async ()=>{ await signOut(auth); location.href='admin-login.html'; };
+</script>
+</body>
+</html>
