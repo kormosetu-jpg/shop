@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manual Sell - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Checking Admin...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-sell-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Manual Sell</h1><p class="text-xs text-white/40">Qty অনুযায়ী Barcode Scan - Category Wise</p></div>
+  </div>
+  <a href="admin-manual-sales-list.html" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">History →</a>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28">
+  <div class="mb-4">
+    <button id="startScanBtn" class="w-full bg-[#FFC300] text-black py-3 rounded-full font-black text-sm">📷 বারকোড দিয়ে খুঁজুন</button>
+    <div id="reader" class="mt-3 hidden rounded-2xl overflow-hidden border border-[#FFC300]"></div>
+  </div>
+
+  <input id="productSearch" placeholder="🔍 IN ID / Style / Rack / প্রোডাক্ট খুঁজুন..." class="w-full bg-[#121212] border border-white/10 rounded-full px-5 py-3 text-sm outline-none focus:border-[#FFC300]">
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-4 mt-4">
+    <p class="text-xs font-black text-[#FFC300]">সব Inbound (<span id="prodCount">0</span>)</p>
+    <div id="productList" class="mt-3 space-y-2 max-h-[320px] overflow-y-auto"></div>
+  </div>
+
+  <div id="formArea" class="hidden bg-[#121212] border border-[#FFC300]/30 rounded-3xl p-6 mt-6">
+    <div class="bg-[#080808] border border-[#FFC300]/20 rounded-2xl p-3 flex gap-3 items-center">
+      <img id="selImg" src="" class="w-14 h-14 rounded-xl object-cover bg-white">
+      <div class="flex-1"><p id="selName" class="font-bold text-sm"></p><p id="selInfo" class="text-xs text-white/40"></p><p id="autoCat" class="text-xs text-[#FFC300] font-bold mt-1"></p></div>
+      <button onclick="clearProduct()" class="w-8 h-8 bg-red-500/20 text-red-400 rounded-full">✕</button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mt-5">
+      <div><label class="text-xs text-white/40">Size</label><select id="sizeSelect" class="w-full mt-1 bg-[#080808] border border-white/10 rounded-full px-4 py-3 text-sm outline-none"></select></div>
+      <div><label class="text-xs text-white/40">Available</label><p id="stockQty" class="mt-1 bg-[#080808] border border-white/5 rounded-full px-4 py-3 text-sm text-[#FFC300] font-black">0</p></div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 mt-4">
+      <div><label class="text-xs text-white/40">Qty (যত Qty তত Scan লাগবে)</label><input id="qty" type="number" value="1" min="1" class="w-full mt-1 bg-[#080808] border border-[#FFC300]/30 rounded-full px-4 py-3 text-sm text-center font-black outline-none"></div>
+      <div><label class="text-xs text-white/40">Buy Price</label><input id="buyPrice" type="number" readonly class="w-full mt-1 bg-[#080808] border border-white/5 rounded-full px-4 py-3 text-sm text-center text-white/40"></div>
+      <div><label class="text-xs text-white/40">Sell Price *</label><input id="sellPrice" type="number" class="w-full mt-1 bg-[#080808] border border-white/10 rounded-full px-4 py-3 text-sm text-center font-black outline-none focus:border-[#FFC300]"></div>
+    </div>
+
+    <div class="mt-6 bg-[#080808] border border-dashed border-[#FFC300]/30 rounded-2xl p-4">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" id="isCustomCheck" class="w-5 h-5 accent-[#FFC300]">
+        <span class="text-sm font-black">🎨 কাস্টম করবে? <span id="customHint" class="text-xs text-white/40 font-normal"></span></span>
+      </label>
+      <div id="customArea" class="hidden mt-5">
+        <div id="customFieldsContainer" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <div class="bg-[#080808] rounded-2xl p-4 mt-5 flex justify-between items-center">
+      <div><p class="text-xs text-white/40">মোট</p><p id="totalPrice" class="font-black text-xl text-[#FFC300]">৳0</p></div>
+      <div class="text-right"><p class="text-xs text-white/40">লাভ</p><p id="profitAmt" class="font-black">৳0</p></div>
+    </div>
+
+    <p class="text-xs font-black text-[#FFC300] mt-5">কাস্টমার (ঐচ্ছিক)</p>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+      <input id="cName" placeholder="নাম (ঐচ্ছিক)" class="w-full bg-[#080808] border border-white/10 rounded-full px-5 py-3 text-sm outline-none">
+      <input id="cPhone" placeholder="ফোন (ঐচ্ছিক)" class="w-full bg-[#080808] border border-white/10 rounded-full px-5 py-3 text-sm outline-none">
+    </div>
+
+    <div class="mt-4 bg-[#080808] border border-white/10 rounded-3xl p-4">
+      <p class="text-xs font-black text-[#FFC300] mb-3">🚚 ডেলিভারি (ঐচ্ছিক)</p>
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button id="deliveryShop" data-del="shop" class="del-btn bg-[#FFC300] text-black py-3 rounded-full text-xs font-black">🏪 দোকান</button>
+        <button id="deliveryHome" data-del="home" class="del-btn bg-white/10 text-white py-3 rounded-full text-xs font-bold">🏠 হোম</button>
+      </div>
+      <div id="deliveryFields" class="hidden space-y-3">
+        <textarea id="cAddress" rows="2" placeholder="পুরো ঠিকানা" class="w-full bg-black border border-white/10 rounded-2xl px-5 py-3 text-sm outline-none resize-none"></textarea>
+        <div class="grid grid-cols-2 gap-3">
+          <input id="cArea" placeholder="এলাকা / থানা" class="w-full bg-black border border-white/10 rounded-full px-5 py-3 text-sm outline-none">
+          <div class="bg-black border border-[#FFC300]/20 rounded-full px-5 py-3 flex items-center justify-between">
+            <span class="text-xs text-white/40">চার্জ</span>
+            <div class="flex items-center gap-1"><span class="text-xs">৳</span><input id="deliveryCharge" type="number" value="0" class="w-16 bg-transparent text-sm font-black text-right outline-none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-xs font-black text-[#FFC300] mt-4">টাকা (ঐচ্ছিক)</p>
+    <div class="grid grid-cols-3 gap-3 mt-2">
+      <div><label class="text-xs text-white/40">জমা দিছে</label><input id="paidAmt" type="number" value="0" class="w-full mt-1 bg-[#080808] border border-green-500/20 rounded-full px-4 py-3 text-sm text-center outline-none"><button id="halfPayBtn" class="w-full mt-2 bg-white/10 text-white py-2 rounded-full text-xs font-bold">৫০% অগ্রিম</button></div>
+      <div><label class="text-xs text-white/40">বাকি</label><p id="dueAmt" class="mt-1 bg-[#080808] border border-red-500/20 rounded-full px-4 py-3 text-sm text-center font-black text-red-400">৳0</p></div>
+      <div><label class="text-xs text-white/40">Method</label><select id="payMethod" class="w-full mt-1 bg-[#080808] border border-white/10 rounded-full px-4 py-3 text-sm outline-none"><option value="cash">Cash</option><option value="bkash">bKash</option><option value="nagad">Nagad</option><option value="rocket">Rocket</option><option value="due">Due</option></select></div>
+    </div>
+
+    <input id="note" placeholder="নোট (ঐচ্ছিক)" class="w-full bg-[#080808] border border-white/10 rounded-full px-5 py-3 text-sm outline-none mt-3">
+    <button id="placeOrderBtn" class="w-full bg-[#FFC300] text-black py-4 rounded-full font-black text-sm mt-5">📷 স্ক্যান করে অর্ডার কনফার্ম করুন (Qty অনুযায়ী) ✅</button>
+  </div>
+</div>
+
+<script type="module" src="./admin-manual-sell.js"></script>
+</body>
+</html>
