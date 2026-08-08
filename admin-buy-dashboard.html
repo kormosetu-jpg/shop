@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buy Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Buy Dashboard</h1><p class="text-xs text-white/40">IN / Stock / Sold - Full Hisab</p></div>
+  </div>
+  <a href="inbound.html" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">+ Inbound</a>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28">
+
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <div class="bg-[#121212] border border-[#FFC300]/30 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট IN করা পিস</p>
+      <p id="totalInQty" class="text-3xl font-black mt-2 text-[#FFC300]">0</p>
+      <p id="inboundCount" class="text-xs text-white/30 mt-1">0 বার Inbound</p>
+    </div>
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট কেনা - খরচ</p>
+      <p id="buyCost" class="text-3xl font-black mt-2">৳0</p>
+      <p class="text-xs text-white/30 mt-1">Buy Price Total</p>
+    </div>
+
+    <div class="bg-[#121212] border border-green-500/20 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">বর্তমান স্টক আছে</p>
+      <p id="stockQty" class="text-3xl font-black mt-2 text-green-400">0</p>
+      <p id="stockValue" class="text-xs text-white/30 mt-1">Value ৳0</p>
+    </div>
+    <div class="bg-[#121212] border border-red-500/20 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট বের হয়েছে (Sold)</p>
+      <p id="soldQty" class="text-3xl font-black mt-2 text-red-400">0</p>
+      <p id="soldValue" class="text-xs text-white/30 mt-1">Cost ৳0</p>
+    </div>
+
+    <div class="bg-[#FFC300] p-5 rounded-3xl text-black col-span-2">
+      <div class="flex justify-between items-center">
+        <div><p class="text-xs opacity-60">Manual Sell এ OUT</p><p id="manualOutQty" class="text-2xl font-black mt-1">0 pcs</p></div>
+        <div class="text-right"><p class="text-xs opacity-60">Order এ OUT</p><p id="orderOutQty" class="text-2xl font-black mt-1">0 pcs</p></div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-black/10 flex justify-between text-xs font-bold">
+        <span>Total OUT</span><span id="totalOutQty">0 pcs</span>
+      </div>
+    </div>
+
+    <div class="bg-black border border-white/10 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">এই মাসে কেনা</p>
+      <p id="monthBuyQty" class="text-2xl font-black mt-2">0 pcs</p>
+      <p id="monthBuy" class="text-xs text-[#FFC300] mt-1">৳0</p>
+    </div>
+    <div class="bg-black border border-white/10 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">গড় Buy Price</p>
+      <p id="avgBuy" class="text-2xl font-black mt-2">৳0</p>
+      <p class="text-xs text-white/30 mt-1">Per Pcs</p>
+    </div>
+
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl col-span-2">
+      <p class="text-xs text-white/40">Rack Wise Stock</p>
+      <div id="rackWise" class="flex flex-wrap gap-2 mt-3"></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mt-8">
+    <a href="inbound.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl flex items-center gap-4">
+      <div class="w-12 h-12 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center text-lg">📥</div>
+      <div><p class="font-black text-sm">Inbound</p><p class="text-xs text-white/40">নতুন স্টক ইন</p></div>
+    </a>
+    <a href="stock.html" class="bg-white text-black p-5 rounded-3xl flex items-center gap-4">
+      <div class="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center text-lg">📊</div>
+      <div><p class="font-black text-sm">Stock Details</p><p class="text-xs opacity-60">বিস্তারিত</p></div>
+    </a>
+    <a href="admin-hisab-dashboard.html" class="bg-[#121212] border border-[#FFC300]/30 p-5 rounded-3xl flex items-center gap-4 col-span-2">
+      <div class="w-12 h-12 bg-[#FFC300] text-black rounded-2xl flex items-center justify-center text-lg">📈</div>
+      <div><p class="font-black text-sm">Hisab দেখুন</p><p class="text-xs text-white/40">লাভ-লস</p></div>
+    </a>
+  </div>
+
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📦</span><span class="text-">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">💰</span><span class="text-">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl bg-[#FFC300] text-black"><span class="text-lg">🛒</span><span class="text- font-black">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">👥</span><span class="text-">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📊</span><span class="text-">Hisab</span></a>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return location.href='admin-login.html';
+  const snap = await getDoc(doc(db,"admins",user.uid));
+  if(!snap.exists()) return location.href='admin-login.html';
+  document.body.classList.remove('hidden');
+  loadBuy();
+});
+
+async function loadBuy(){
+  try{
+    const [inSnap, manualSnap, orderSnap] = await Promise.all([
+      getDocs(collection(db,"inbounds")),
+      getDocs(collection(db,"manual_sales")),
+      getDocs(collection(db,"orders"))
+    ]);
+
+    let totalInQty=0, totalCost=0, currentStockQty=0, currentStockValue=0, monthQty=0, monthCost=0, rackMap={};
+    const now = new Date();
+
+    inSnap.forEach(d=>{
+      const o = d.data();
+      let inQty=0, stockQty=0;
+      if(o.sizes && Array.isArray(o.sizes)){
+        o.sizes.forEach(s=>{
+          const total = s.serials? s.serials.length : Number(s.qty||0);
+          const stock = s.serials? s.serials.filter(x=>x.status==='in').length : Number(s.qty||0);
+          inQty+=total; stockQty+=stock;
+        });
+      } else {
+        inQty = Number(o.totalQty||o.qty||0);
+        stockQty = inQty;
+      }
+      const buyPrice = Number(o.buyPrice||0);
+      totalInQty+=inQty;
+      totalCost+= inQty * buyPrice;
+      currentStockQty+=stockQty;
+      currentStockValue+= stockQty * buyPrice;
+
+      const rack = o.rack||'N/A';
+      if(!rackMap[rack]) rackMap[rack]={in:0, stock:0};
+      rackMap[rack].in+=inQty;
+      rackMap[rack].stock+=stockQty;
+
+      const cd = o.createdAt?.toDate? o.createdAt.toDate() : new Date(o.createdAt||Date.now());
+      if(cd.getMonth()===now.getMonth() && cd.getFullYear()===now.getFullYear()){
+        monthQty+=inQty;
+        monthCost+= inQty * buyPrice;
+      }
+    });
+
+    let manualOutQty=0, orderOutQty=0;
+    manualSnap.forEach(d=>{
+      const s = d.data();
+      const qty = s.barcodes?.length || s.items?.reduce((a,i)=>a+Number(i.qty||i.quantity||0),0) || 0;
+      manualOutQty+=qty;
+    });
+    orderSnap.forEach(d=>{
+      const o = d.data();
+      const qty = o.items?.reduce((a,i)=>a+Number(i.qty||i.quantity||0),0) || 0;
+      orderOutQty+=qty;
+    });
+
+    const totalOutQty = manualOutQty + orderOutQty;
+    const soldQty = totalInQty - currentStockQty; // Actual sold from serials
+    const avgBuy = totalInQty>0? (totalCost/totalInQty).toFixed(0) : 0;
+
+    document.getElementById('totalInQty').innerText = totalInQty+' pcs';
+    document.getElementById('inboundCount').innerText = inSnap.size+' বার Inbound';
+    document.getElementById('buyCost').innerText = '৳'+totalCost;
+    document.getElementById('stockQty').innerText = currentStockQty+' pcs';
+    document.getElementById('stockValue').innerText = 'Value ৳'+currentStockValue;
+    document.getElementById('soldQty').innerText = soldQty+' pcs';
+    document.getElementById('soldValue').innerText = 'Cost ৳'+(totalCost - currentStockValue);
+    document.getElementById('manualOutQty').innerText = manualOutQty+' pcs';
+    document.getElementById('orderOutQty').innerText = orderOutQty+' pcs';
+    document.getElementById('totalOutQty').innerText = totalOutQty+' pcs';
+    document.getElementById('monthBuyQty').innerText = monthQty+' pcs';
+    document.getElementById('monthBuy').innerText = '৳'+monthCost;
+    document.getElementById('avgBuy').innerText = '৳'+avgBuy;
+
+    document.getElementById('rackWise').innerHTML = Object.entries(rackMap).map(([rack, v])=>`<span class="bg-white/10 border border-white/10 px-3 py-1.5 rounded-full text-xs">📦 ${rack}: ${v.stock}/${v.in} pcs</span>`).join('');
+
+  }catch(e){ console.log(e); }
+}
+</script>
+</body>
+</html>
