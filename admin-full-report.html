@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Full Report - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Report লোড...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-hisab-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Smart Report</h1><p class="text-xs text-white/40">খরচ বাদে Net লাভ</p></div>
+  </div>
+  <button onclick="window.print()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">🖨️ Print</button>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28 space-y-4">
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-4">
+    <input id="searchBox" onkeyup="liveSearch(this.value)" placeholder="🔍 সার্চ করো - Buy, Sell, Stock, Due, Profit, Rack, গাড়ি..." class="w-full bg-black border border-white/10 rounded-full px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button onclick="showOnly('buy')" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs font-bold">📥 Buy Report</button>
+      <button onclick="showOnly('sell')" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs font-bold">💰 Sell Report</button>
+      <button onclick="showOnly('stock')" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs font-bold">📦 Stock Report</button>
+      <button onclick="showOnly('due')" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs font-bold">📒 Due Khata</button>
+      <button onclick="showOnly('profit')" class="filterBtn bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">📈 Profit (গাড়ি ভাড়া সহ)</button>
+      <button onclick="showOnly('rack')" class="filterBtn bg-white/10 px-4 py-2 rounded-full text-xs font-bold">🗄️ Rack Wise</button>
+      <button onclick="showAll()" class="bg-white/10 px-4 py-2 rounded-full text-xs font-bold">👁️ সব দেখো</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-2xl"><p class="text-xs text-white/40">মোট কেনা</p><p id="rBuyCost" class="text-xl font-black mt-1">৳0</p></div>
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-2xl"><p class="text-xs text-white/40">মোট বিক্রি</p><p id="rSell" class="text-xl font-black mt-1 text-[#FFC300]">৳0</p></div>
+    <div class="bg-[#121212] border border-white/10 p-4 rounded-2xl"><p class="text-xs text-white/40">স্টক Value</p><p id="rStockVal" class="text-xl font-black mt-1 text-green-400">৳0</p></div>
+    <div class="bg-[#FFC300] p-4 rounded-2xl text-black"><p class="text-xs opacity-60">NET PROFIT</p><p id="rProfit" class="text-xl font-black mt-1">৳0</p><p id="rExpenseMini" class="text-[10px] opacity-60 mt-1"></p></div>
+  </div>
+
+  <div id="sec-buy" class="reportSec hidden bg-[#121212] border border-[#FFC300]/30 rounded-3xl p-5">
+    <div class="flex justify-between"><h3 class="font-black text-sm text-[#FFC300]">📥 Buy Report</h3><button onclick="hideSec('sec-buy')" class="text-xs bg-white/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+      <div class="bg-black p-3 rounded-xl"><p class="text-white/40">মোট IN</p><p id="bInCount" class="font-black text-lg">0</p></div>
+      <div class="bg-black p-3 rounded-xl"><p class="text-white/40">মোট pcs</p><p id="bTotalQty" class="font-black text-lg">0</p></div>
+      <div class="bg-black p-3 rounded-xl col-span-2"><p class="text-white/40">Buy Cost</p><p id="bCost" class="font-black text-lg">৳0</p></div>
+    </div>
+  </div>
+
+  <div id="sec-sell" class="reportSec hidden bg-[#121212] border border-green-500/20 rounded-3xl p-5">
+    <div class="flex justify-between"><h3 class="font-black text-sm text-green-400">💰 Sell Report</h3><button onclick="hideSec('sec-sell')" class="text-xs bg-white/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+      <div class="bg-black p-3 rounded-xl"><p class="text-white/40">Online Delivered</p><p id="sOnlineProd" class="font-black text-lg">৳0</p><p id="sOnlineCount" class="text-white/30"></p></div>
+      <div class="bg-black p-3 rounded-xl"><p class="text-white/40">Offline Sell</p><p id="sOffProd" class="font-black text-lg">৳0</p><p id="sOffCount" class="text-white/30"></p></div>
+    </div>
+  </div>
+
+  <div id="sec-stock" class="reportSec hidden bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <div class="flex justify-between"><h3 class="font-black text-sm">📦 Stock Report</h3><button onclick="hideSec('sec-stock')" class="text-xs bg-white/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <input id="stockSearch" onkeyup="searchStock(this.value)" placeholder="Style / Rack / Barcode সার্চ..." class="w-full mt-3 bg-black border border-white/10 rounded-full px-4 py-2 text-xs">
+    <div class="overflow-x-auto mt-3"><table class="w-full text-xs"><thead><tr class="text-white/40 border-b border-white/10"><th class="text-left py-2">Style / Rack</th><th>IN</th><th>Stock</th><th>Sold</th><th>Value</th></tr></thead><tbody id="stockTable"></tbody></table></div>
+    <div id="lowStockList" class="mt-3 text-xs"></div>
+  </div>
+
+  <div id="sec-due" class="reportSec hidden bg-[#121212] border border-red-500/30 rounded-3xl p-5">
+    <div class="flex justify-between"><h3 class="font-black text-sm text-red-400">📒 বাকির খাতা</h3><button onclick="hideSec('sec-due')" class="text-xs bg-white/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <input id="dueSearch" onkeyup="searchDue(this.value)" placeholder="Customer নাম / ফোন সার্চ..." class="w-full mt-3 bg-black border border-white/10 rounded-full px-4 py-2 text-xs">
+    <div class="grid grid-cols-3 gap-3 mt-3 text-xs"><div class="bg-black p-3 rounded-xl text-center"><p class="text-white/40">জমা</p><p id="cPaid" class="font-black text-green-400">৳0</p></div><div class="bg-black p-3 rounded-xl text-center"><p class="text-white/40">বাকি</p><p id="cDue" class="font-black text-red-400">৳0</p></div><div class="bg-black p-3 rounded-xl text-center"><p class="text-white/40">Delivery</p><p id="cDel" class="font-black text-[#FFC300]">৳0</p></div></div>
+    <div class="overflow-x-auto mt-3"><table class="w-full text-xs"><thead><tr class="text-white/40 border-b border-white/10"><th class="text-left py-2">Customer</th><th>Phone</th><th>Type</th><th class="text-right">Due</th></tr></thead><tbody id="dueTable"></tbody></table></div>
+  </div>
+
+  <!-- ✅ UPDATED PROFIT SECTION - গাড়ি ভাড়া সহ -->
+  <div id="sec-profit" class="reportSec bg-white text-black rounded-3xl p-6">
+    <div class="flex justify-between"><h3 class="font-black text-sm">📈 Profit Report - খরচ বাদে Net লাভ</h3><button onclick="hideSec('sec-profit')" class="text-xs bg-black/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <div class="mt-4 space-y-2 text-xs">
+      <div class="flex justify-between"><span class="opacity-60">Product Sell (Custom সহ)</span><span id="pProdSell" class="font-bold">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">Buy Cost (Sold Product এর কেনা)</span><span id="pBuyCost" class="font-bold">৳0</span></div>
+      <div class="flex justify-between border-t border-black/10 pt-2 font-bold"><span class="opacity-80">Product Profit</span><span id="pProdProfit" class="font-black text-green-600">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">+ Delivery Income</span><span id="pDelProfit" class="font-black">৳0</span></div>
+
+      <div class="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 space-y-1.5">
+        <p class="font-black text-red-600 text-[11px]">➖ খরচ (Auto Minus হবে):</p>
+        <div class="flex justify-between"><span>🚛 গাড়ি ভাড়া</span><span id="pGarivara" class="font-bold text-red-600">৳0</span></div>
+        <div class="flex justify-between"><span>🏠 Rent</span><span id="pRent" class="font-bold">৳0</span></div>
+        <div class="flex justify-between"><span>👷 Salary</span><span id="pSalary" class="font-bold">৳0</span></div>
+        <div class="flex justify-between"><span>📦 Other Expense</span><span id="pOtherExp" class="font-bold">৳0</span></div>
+        <div class="flex justify-between border-t border-red-200 pt-1.5 font-black"><span>মোট খরচ</span><span id="pExpense" class="text-red-600">৳0</span></div>
+      </div>
+
+      <div class="flex justify-between border-t-2 border-black pt-3 font-black text-base"><span>NET PROFIT</span><span id="pNet" class="text-xl">৳0</span></div>
+      <p class="text-[10px] opacity-50 text-center mt-2">Formula: (Product Profit + Delivery) - (গাড়ি ভাড়া + সব খরচ) = Net লাভ</p>
+    </div>
+  </div>
+
+  <div id="sec-rack" class="reportSec hidden bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <div class="flex justify-between"><h3 class="font-black text-sm">🗄️ Rack Wise Report</h3><button onclick="hideSec('sec-rack')" class="text-xs bg-white/10 px-3 py-1 rounded-full">✕ Hide</button></div>
+    <div id="rackTable" class="mt-3 text-xs flex flex-wrap gap-2"></div>
+  </div>
+
+</div>
+
+<script type="module" src="./admin-full-report.js"></script>
+</body>
+</html>
