@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Master Invoice - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Hind Siliguri',sans-serif}
+.hidden{display:none!important}
+@media print{
+.no-print{display:none!important}
+ body{background:white!important;color:black!important}
+ #invoice{box-shadow:none!important;border:none!important}
+}
+</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Invoice লোড হচ্ছে...</p></div>
+</div>
+
+<!-- Top Bar - Fixed for Mobile -->
+<div class="bg-[#121212] border-b border-white/10 p-3 sticky top-0 z-50 no-print">
+  <div class="flex justify-between items-center">
+    <div class="flex gap-2 items-center">
+      <button onclick="location.href='admin-hisab-dashboard.html'" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">←</button>
+      <div><h1 class="font-black text-sm leading-none">Master Invoice</h1><p class="text-[10px] text-white/40">এক ক্লিকে সব Total</p></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="resetFilter()" class="bg-white/10 px-3 py-2 rounded-full text-xs font-bold text-yellow-400">রিসেট</button>
+      <button onclick="window.print()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">🖨️ Print</button>
+    </div>
+  </div>
+  <div class="flex gap-2 mt-3">
+    <input id="fromDate" type="date" class="flex-1 bg-black border border-white/10 rounded-full px-3 py-2 text-xs text-white">
+    <input id="toDate" type="date" class="flex-1 bg-black border border-white/10 rounded-full px-3 py-2 text-xs text-white">
+    <button onclick="loadAll()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">Filter</button>
+  </div>
+</div>
+
+<div class="p-3 max-w-4xl mx-auto pb-28">
+  <!-- Invoice Card - White Background -->
+  <div id="invoice" class="bg-white text-black rounded-[24px] p-4 md:p-6 shadow-xl">
+    <!-- Header with Real Shop Data -->
+    <div class="flex justify-between items-start gap-3">
+      <div class="flex gap-3 items-start">
+        <img id="shopLogo" src="" class="w-12 h-12 rounded-xl bg-black/5 object-contain hidden">
+        <div>
+          <h1 id="shopName" class="text-xl font-black">Zevi Hub</h1>
+          <p id="shopAddress" class="text-[11px] opacity-60 mt-0.5">Nazimkhan bazar, Rajarhat, Kurigram</p>
+          <p id="shopPhone" class="text-[11px] opacity-60">01631331043</p>
+          <p id="shopEmail" class="text-[10px] opacity-40">kormosathiprints@gmail.com</p>
+        </div>
+      </div>
+      <div class="text-right text-[11px] shrink-0">
+        <p><span class="opacity-60">Invoice No:</span> <span id="invNo" class="font-black">ZH-000001</span></p>
+        <p class="mt-1"><span class="opacity-60">Date:</span> <span id="invDate" class="font-bold"></span></p>
+        <p><span class="opacity-60">Period:</span> <span id="invPeriod" class="font-bold">All Time</span></p>
+      </div>
+    </div>
+
+    <!-- Summary Cards - 2 cols on mobile -->
+    <div class="grid grid-cols-2 gap-2 md:gap-3 mt-5">
+      <div class="border border-black/10 rounded-2xl p-3"><p class="text-[10px] opacity-60">মোট কেনা</p><p id="sBuy" class="font-black text-sm">৳0</p><p id="sBuyQty" class="text-[10px] opacity-60">0 pcs</p></div>
+      <div class="border border-black/10 rounded-2xl p-3"><p class="text-[10px] opacity-60">মোট বিক্রি</p><p id="sSell" class="font-black text-sm">৳0</p><p class="text-[10px] opacity-60">Product + Delivery</p></div>
+      <div class="border border-black/10 rounded-2xl p-3"><p class="text-[10px] opacity-60">স্টক Value</p><p id="sStock" class="font-black text-sm text-green-600">৳0</p><p id="sStockQty" class="text-[10px] opacity-60">0 pcs</p></div>
+      <div class="bg-[#FFC300] rounded-2xl p-3"><p class="text-[10px] opacity-70 font-bold">NET PROFIT</p><p id="sProfit" class="font-black text-base">৳0</p><p id="sExpMini" class="text-[9px] opacity-70">খরচ বাদে</p></div>
+    </div>
+
+    <!-- Details -->
+    <div class="mt-6 space-y-5 text-[12px]">
+
+      <div>
+        <h3 class="font-black border-b-2 border-black pb-1.5 text-[13px]">📥 Buy Hisab</h3>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          <div class="bg-black/5 p-2.5 rounded-xl text-center"><p class="opacity-60 text-[10px]">Total IN</p><p id="bCount" class="font-bold">0 বার</p></div>
+          <div class="bg-black/5 p-2.5 rounded-xl text-center"><p class="opacity-60 text-[10px]">Qty</p><p id="bQty" class="font-bold">0 pcs</p></div>
+          <div class="bg-black/5 p-2.5 rounded-xl text-center"><p class="opacity-60 text-[10px]">Buy Cost</p><p id="bCost" class="font-black">৳0</p></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-black border-b-2 border-black pb-1.5 text-[13px]">💰 Sell Hisab</h3>
+        <div class="mt-3 space-y-1.5">
+          <div class="flex justify-between"><span>Online Product Sell</span><span id="sellOnlineProd" class="font-bold">৳0</span></div>
+          <div class="flex justify-between"><span>Online Delivery</span><span id="sellOnlineDel">৳0</span></div>
+          <div class="flex justify-between"><span>Offline Product Sell</span><span id="sellOffProd">৳0</span></div>
+          <div class="flex justify-between"><span>Offline Delivery</span><span id="sellOffDel">৳0</span></div>
+          <div class="flex justify-between font-black border-t border-black/10 pt-2 mt-2"><span>মোট Sell</span><span id="sellTotal">৳0</span></div>
+          <div class="flex justify-between opacity-60 text-[11px]"><span>Delivery Total</span><span id="sellDelTotal">৳0</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-black border-b-2 border-black pb-1.5 text-[13px]">💸 খরচ - গাড়ি ভাড়া সহ</h3>
+        <div class="mt-3 space-y-1.5">
+          <div class="flex justify-between"><span>🏠 Rent</span><span id="expRent">৳0</span></div>
+          <div class="flex justify-between"><span>👷 Salary</span><span id="expSalary">৳0</span></div>
+          <div class="flex justify-between font-black text-red-600 bg-red-50 px-3 py-2 rounded-xl border border-red-100"><span>🚛 গাড়ি ভাড়া</span><span id="expGari">৳0</span></div>
+          <div class="flex justify-between"><span>💡 Current</span><span id="expCurrent">৳0</span></div>
+          <div class="flex justify-between"><span>🚚 Delivery Cost</span><span id="expDelivery">৳0</span></div>
+          <div class="flex justify-between"><span>📦 Others</span><span id="expOther">৳0</span></div>
+          <div class="flex justify-between font-black border-t-2 border-black pt-2 mt-2"><span>মোট খরচ</span><span id="expTotal">৳0</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="font-black border-b-2 border-black pb-1.5 text-[13px]">💵 Cash & Due</h3>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          <div class="bg-green-50 border border-green-100 p-3 rounded-xl text-center"><p class="opacity-60 text-[10px]">জমা</p><p id="cashPaid" class="font-black text-green-600">৳0</p></div>
+          <div class="bg-red-50 border border-red-100 p-3 rounded-xl text-center"><p class="opacity-60 text-[10px]">বাকি</p><p id="cashDue" class="font-black text-red-600">৳0</p></div>
+          <div class="bg-yellow-50 border border-yellow-100 p-3 rounded-xl text-center"><p class="opacity-60 text-[10px]">Delivery</p><p id="cashDel" class="font-black">৳0</p></div>
+        </div>
+      </div>
+
+      <div class="bg-black text-white rounded-2xl p-4">
+        <h3 class="font-black text-[#FFC300] text-sm">📈 Final Calculation</h3>
+        <div class="mt-3 space-y-2 text-[12px]">
+          <div class="flex justify-between"><span class="text-white/60">Product Sell</span><span id="fProdSell">৳0</span></div>
+          <div class="flex justify-between"><span class="text-white/60">- Buy Cost (Sold)</span><span id="fBuyCost">৳0</span></div>
+          <div class="flex justify-between font-bold text-green-400 border-b border-white/10 pb-2"><span>Product Profit</span><span id="fProdProfit">৳0</span></div>
+          <div class="flex justify-between"><span class="text-white/60">+ Delivery Income</span><span id="fDel">৳0</span></div>
+          <div class="flex justify-between text-red-400"><span>- Total Expense (গাড়ি ভাড়া সহ)</span><span id="fExp">৳0</span></div>
+          <div class="flex justify-between border-t border-white/20 pt-3 font-black text-base"><span>NET PROFIT</span><span id="fNet" class="text-[#FFC300] text-xl">৳0</span></div>
+        </div>
+      </div>
+
+      <div class="text-center opacity-40 text-[10px] pt-4 border-t border-black/10">
+        <p>Computer Generated Report - <span id="footerShop">KS PRINTS</span></p>
+        <p id="genTime"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+let globalInBounds = [];
+let globalOrders = [];
+let globalManual = [];
+let globalExpenses = [];
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return location.href='admin-login.html';
+  const snap = await getDoc(doc(db,"admins",user.uid));
+  if(!snap.exists()) return location.href='admin-login.html';
+  document.body.classList.remove('hidden');
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('invDate').innerText=new Date().toLocaleDateString('en-GB');
+  document.getElementById('invNo').innerText='KS-'+Date.now().toString().slice(-6);
+  document.getElementById('genTime').innerText='Generated: '+new Date().toLocaleString('en-GB');
+  await loadShopInfo();
+  await fetchAllData();
+  loadAll();
+});
+
+async function loadShopInfo(){
+  try{
+    const shopSnap = await getDoc(doc(db,"settings","general"));
+    if(shopSnap.exists()){
+      const d=shopSnap.data();
+      document.getElementById('shopName').innerText=d.shopName||'KS Prints';
+      document.getElementById('footerShop').innerText=d.shopName||'KS Prints';
+      document.getElementById('shopAddress').innerText=d.address||'Nazimkhan bazar, Rajarhat, Kurigram';
+      document.getElementById('shopPhone').innerText=d.phone||'01631331043';
+      document.getElementById('shopEmail').innerText=d.email||'';
+      if(d.logoUrl){
+        const logo=document.getElementById('shopLogo');
+        logo.src=d.logoUrl;
+        logo.classList.remove('hidden');
+      }
+    }
+  }catch(e){ console.log('shop info error',e); }
+}
+
+async function fetchAllData(){
+  const [inSnap, orderSnap, manualSnap, expSnap] = await Promise.all([
+    getDocs(collection(db,"inbounds")),
+    getDocs(collection(db,"orders")),
+    getDocs(collection(db,"manual_sales")),
+    getDocs(collection(db,"expenses")).catch(()=>({forEach:()=>{}}))
+  ]);
+
+  globalInBounds = [];
+  globalOrders = [];
+  globalManual = [];
+  globalExpenses = [];
+
+  inSnap.forEach(d => globalInBounds.push({id: d.id, ...d.data()}));
+  orderSnap.forEach(d => globalOrders.push({id: d.id, ...d.data()}));
+  manualSnap.forEach(d => globalManual.push({id: d.id, ...d.data()}));
+  expSnap.forEach(d => globalExpenses.push({id: d.id, ...d.data()}));
+}
+
+window.loadAll = () => {
+  const fromVal = document.getElementById('fromDate').value;
+  const toVal = document.getElementById('toDate').value;
+  
+  let fromDate = null;
+  let toDate = null;
+
+  if (fromVal) {
+    fromDate = new Date(fromVal);
+    fromDate.setHours(0, 0, 0, 0);
+  }
+  if (toVal) {
+    toDate = new Date(toVal);
+    toDate.setHours(23, 59, 59, 999);
+  }
+
+  const parseItemDate = (rawDate) => {
+    if (!rawDate) return null;
+    if (typeof rawDate.toDate === 'function') {
+      return rawDate.toDate();
+    }
+    const d = new Date(rawDate);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const isDateInRange = (rawDate) => {
+    if (!fromDate || !toDate) return true;
+    const d = parseItemDate(rawDate);
+    if (!d) return false;
+    return d >= fromDate && d <= toDate;
+  };
+
+  let totalInQty = 0, totalBuyCost = 0, stockQty = 0, stockVal = 0, filteredInCount = 0;
+  
+  globalInBounds.forEach(data => {
+    let inQ = 0, stQ = 0;
+    if (data.sizes) { 
+      data.sizes.forEach(s => { 
+        const t = s.serials ? s.serials.length : Number(s.qty || 0); 
+        const st = s.serials ? s.serials.filter(x => x.status === 'in').length : Number(s.qty || 0); 
+        inQ += t; 
+        stQ += st; 
+      }); 
+    } else { 
+      inQ = Number(data.totalQty || data.qty || 0); 
+      stQ = inQ; 
+    }
+    
+    stockQty += stQ; 
+    stockVal += stQ * Number(data.buyPrice || 0);
+
+    const recordDate = data.createdAt || data.date || data.timestamp;
+    if (isDateInRange(recordDate)) {
+      totalInQty += inQ; 
+      totalBuyCost += inQ * Number(data.buyPrice || 0);
+      filteredInCount++;
+    }
+  });
+
+  let onlineProd = 0, onlineDel = 0, onlinePaid = 0, onlineDue = 0;
+  globalOrders.forEach(o => {
+    if (!['delivered', 'completed'].includes((o.status || '').toLowerCase())) return;
+    const recordDate = o.createdAt || o.date || o.timestamp;
+    if (!isDateInRange(recordDate)) return;
+
+    const del = Number(o.deliveryCharge || o.customer?.deliveryCharge || 0);
+    const sub = o.subTotal != null ? Number(o.subTotal) : Number(o.total || 0) - del;
+    onlineProd += sub + Number(o.customCharge || 0); 
+    onlineDel += del;
+    onlinePaid += Number(o.paid || o.advanceAmount || o.total || 0); 
+    onlineDue += Number(o.due || o.remainingAmount || 0);
+  });
+
+  let offProd = 0, offDel = 0, offPaid = 0, offDue = 0;
+  globalManual.forEach(s => {
+    const c = s.customer || {};
+    const recordDate = s.createdAt || s.date || s.timestamp;
+    if (!isDateInRange(recordDate)) return;
+
+    const del = Number(s.deliveryCharge || c.deliveryCharge || 0);
+    offProd += Number(s.total || 0) - del; 
+    offDel += del;
+    offPaid += Number(s.paid || 0); 
+    offDue += Number(s.due || 0);
+  });
+
+  let expTotal = 0, garivara = 0, rent = 0, salary = 0, current = 0, delivery = 0, other = 0;
+  globalExpenses.forEach(e => {
+    const a = Number(e.amount || 0);
+    const recordDate = e.createdAt || e.date || e.timestamp;
+    if (!isDateInRange(recordDate)) return;
+
+    expTotal += a;
+    if (e.category === 'garivara') garivara += a;
+    else if (e.category === 'rent') rent += a;
+    else if (e.category === 'salary') salary += a;
+    else if (e.category === 'current') current += a;
+    else if (e.category === 'delivery') delivery += a;
+    else other += a;
+  });
+
+  const totalProdSell = onlineProd + offProd;
+  const totalDel = onlineDel + offDel;
+  const totalSell = totalProdSell + totalDel;
+  const soldBuyCost = totalBuyCost > stockVal ? (totalBuyCost - stockVal) : 0;
+  const prodProfit = totalProdSell - soldBuyCost;
+  const netProfit = prodProfit + totalDel - expTotal;
+
+  document.getElementById('sBuy').innerText = '৳' + totalBuyCost; 
+  document.getElementById('sBuyQty').innerText = totalInQty + ' pcs';
+  document.getElementById('sSell').innerText = '৳' + totalSell; 
+  document.getElementById('sStock').innerText = '৳' + stockVal;
+  document.getElementById('sStockQty').innerText = stockQty + ' pcs'; 
+  document.getElementById('sProfit').innerText = '৳' + netProfit;
+  document.getElementById('sExpMini').innerText = 'খরচ ৳' + expTotal + ' (গাড়ি ৳' + garivara + ') বাদে';
+
+  document.getElementById('bCount').innerText = (fromDate && toDate ? filteredInCount : globalInBounds.length) + ' বার'; 
+  document.getElementById('bQty').innerText = totalInQty + ' pcs'; 
+  document.getElementById('bCost').innerText = '৳' + totalBuyCost;
+  
+  document.getElementById('sellOnlineProd').innerText = '৳' + onlineProd; 
+  document.getElementById('sellOnlineDel').innerText = '৳' + onlineDel;
+  document.getElementById('sellOffProd').innerText = '৳' + offProd; 
+  document.getElementById('sellOffDel').innerText = '৳' + offDel;
+  document.getElementById('sellTotal').innerText = '৳' + totalSell; 
+  document.getElementById('sellDelTotal').innerText = '৳' + totalDel;
+  
+  document.getElementById('expRent').innerText = '৳' + rent; 
+  document.getElementById('expSalary').innerText = '৳' + salary;
+  document.getElementById('expGari').innerText = '৳' + garivara; 
+  document.getElementById('expCurrent').innerText = '৳' + current;
+  document.getElementById('expDelivery').innerText = '৳' + delivery; 
+  document.getElementById('expOther').innerText = '৳' + other;
+  document.getElementById('expTotal').innerText = '৳' + expTotal;
+  
+  document.getElementById('cashPaid').innerText = '৳' + (onlinePaid + offPaid); 
+  document.getElementById('cashDue').innerText = '৳' + (onlineDue + offDue); 
+  document.getElementById('cashDel').innerText = '৳' + totalDel;
+  
+  document.getElementById('fProdSell').innerText = '৳' + totalProdSell; 
+  document.getElementById('fBuyCost').innerText = '৳' + soldBuyCost;
+  document.getElementById('fProdProfit').innerText = '৳' + prodProfit; 
+  document.getElementById('fDel').innerText = '৳' + totalDel;
+  document.getElementById('fExp').innerText = '৳' + expTotal; 
+  document.getElementById('fNet').innerText = '৳' + netProfit;
+
+  if (fromVal && toVal) document.getElementById('invPeriod').innerText = fromVal + ' to ' + toVal; 
+  else document.getElementById('invPeriod').innerText = 'All Time';
+}
+
+window.resetFilter = () => {
+  document.getElementById('fromDate').value = '';
+  document.getElementById('toDate').value = '';
+  loadAll();
+}
+</script>
+</body>
+</html>
