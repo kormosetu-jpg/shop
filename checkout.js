@@ -1,0 +1,426 @@
+import { db, auth } from "./firebase.js";
+import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const CLOUDINARY_CLOUD = "dwxhgon31";
+const CLOUDINARY_PRESET = "ksupload";
+
+let payScreenshotUrl = "";
+let deliveryCharge = 70;
+let customCharge = 0;
+let DELIVERY_SETTINGS = { insideDhaka: 70, outsideDhaka: 130, freeMin: 2000, active: true };
+let PAYMENT_SETTINGS = null;
+let couponDiscount = 0;
+let appliedCoupon = null;
+let freeDeliveryByCoupon = false;
+let isRendering = false;
+
+let isBuyNow = localStorage.getItem('ks_buy_now')==='true';
+let cart = [];
+if(isBuyNow && localStorage.getItem('ks_checkout_items')){
+  cart = JSON.parse(localStorage.getItem('ks_checkout_items')||'[]');
+}else{
+  cart = JSON.parse(localStorage.getItem('ks_cart')||'[]');
+}
+if(cart.length===0){ location.href='product.html'; }
+
+const orderList = document.getElementById('orderList');
+const itemCount = document.getElementById('itemCount');
+const subTotalEl = document.getElementById('subTotal');
+const deliveryFeeEl = document.getElementById('deliveryFee');
+const totalPayEl = document.getElementById('totalPay');
+const advanceBox = document.getElementById('advanceBox');
+const advanceAmountEl = document.getElementById('advanceAmount');
+const remainingAmountEl = document.getElementById('remainingAmount');
+const normalPay = document.getElementById('normalPay');
+const advancePay = document.getElementById('advancePay');
+
+async function loadPaymentSettings(){
+  try{
+    const snap = await getDoc(doc(db,"settings","payment"));
+    if(!snap.exists()) return;
+    PAYMENT_SETTINGS = snap.data();
+    if(PAYMENT_SETTINGS.active===false) return;
+    const payBox = document.getElementById('paymentNumbersBox');
+    if(!payBox) return;
+    const makeRow = (bg, iconText, name, number, type) => {
+      if(!number) return '';
+      return `<div class="flex items-center justify-between bg-black border border-white/10 rounded-xl px-3 py-2.5"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs text-white shrink-0" style="background:${bg}">${iconText}</div><div><p class="text-xs text-white/50 leading-none">${name} ${type?`(${type})`:''}</p><p class="text-sm font-mono font-bold tracking-wide">${number}</p></div></div><button onclick="navigator.clipboard.writeText('${number}'); Swal.fire({toast:true,position:'top',timer:1000,showConfirmButton:false,icon:'success',title:'কপি হয়েছে',background:'#121212',color:'#fff'})" class="bg-white/10 hover:bg-[#FFC300] hover:text-black text-xs px-3 py-1.5 rounded-full font-bold">Copy</button></div>`;
+    }
+    payBox.innerHTML = `${makeRow('#E2136E','bK','বিকাশ', PAYMENT_SETTINGS.bkash, PAYMENT_SETTINGS.bkashType)}${makeRow('#F6921E','Na','নগদ', PAYMENT_SETTINGS.nagad)}${makeRow('#8C3494','Ro','রকেট', PAYMENT_SETTINGS.rocket)}${makeRow('#5E35B1','Up','উপায়', PAYMENT_SETTINGS.upay)}${PAYMENT_SETTINGS.bankName? `<div class="mt-3 bg-[#FFC300]/5 border border-[#FFC300]/20 rounded-xl p-3 text-xs leading-5"><p class="font-black text-[#FFC300]">🏦 ${PAYMENT_SETTINGS.bankName} - ${PAYMENT_SETTINGS.bankBranch||''}</p><p class="text-white/70">Name: <span class="text-white font-bold">${PAYMENT_SETTINGS.bankAccName||''}</span></p><div class="flex items-center justify-between"><p class="text-white/70">Acc No: <span class="text-white font-mono font-bold">${PAYMENT_SETTINGS.bankAccNo}</span></p><button onclick="navigator.clipboard.writeText('${PAYMENT_SETTINGS.bankAccNo}');Swal.fire({toast:true,position:'top',timer:1000,showConfirmButton:false,icon:'success',title:'কপি হয়েছে',background:'#121212',color:'#fff'})" class="text-xs bg-white/10 px-2.5 py-1 rounded-full">Copy</button></div></div>` : ''}`;
+  }catch(e){}
+}
+
+async function loadDeliverySettings(){
+  try{
+    const snap = await getDoc(doc(db,"settings","delivery"));
+    if(snap.exists()){
+      const d = snap.data();
+      DELIVERY_SETTINGS.insideDhaka = d.insideDhaka?? 70;
+      DELIVERY_SETTINGS.outsideDhaka = d.outsideDhaka?? 130;
+      DELIVERY_SETTINGS.freeMin = (d.freeMin!== undefined && d.freeMin!== null)? Number(d.freeMin) : 2000;
+      DELIVERY_SETTINGS.active = d.active!== false;
+      const insidePriceEl = document.getElementById('insidePrice');
+      const outsidePriceEl = document.getElementById('outsidePrice');
+      if(insidePriceEl) insidePriceEl.innerText = DELIVERY_SETTINGS.insideDhaka + '৳';
+      if(outsidePriceEl) outsidePriceEl.innerText = DELIVERY_SETTINGS.outsideDhaka + '৳';
+      const insideRadio = document.getElementById('insideRadio');
+      const outsideRadio = document.getElementById('outsideRadio');
+      if(insideRadio) insideRadio.value = DELIVERY_SETTINGS.insideDhaka;
+      if(outsideRadio) outsideRadio.value = DELIVERY_SETTINGS.outsideDhaka;
+      const freeInfo = document.getElementById('freeInfo');
+      if(freeInfo){
+        if(DELIVERY_SETTINGS.freeMin > 0){
+          freeInfo.classList.remove('hidden');
+          freeInfo.innerText = `🎉 ${DELIVERY_SETTINGS.freeMin}৳+ অর্ডারে ডেলিভারি ফ্রি!`;
+        } else freeInfo.classList.add('hidden');
+      }
+      const checked = document.querySelector('input[name="delivery"]:checked');
+      deliveryCharge = checked && checked.id === 'outsideRadio'? DELIVERY_SETTINGS.outsideDhaka : DELIVERY_SETTINGS.insideDhaka;
+      renderCart();
+    }
+  }catch(e){ renderCart(); }
+}
+
+function isCustomOrder(){
+  const hasExplicitCustom = cart.some(p => p.isCustom || p.customDetails || p.custom);
+  const forceAdvance = localStorage.getItem('ks_advance_required') === 'true';
+  return hasExplicitCustom || forceAdvance;
+}
+
+function getFinalDeliveryCharge(sub){
+  if(freeDeliveryByCoupon) return 0;
+  if(!DELIVERY_SETTINGS.active) return deliveryCharge;
+  const minLimit = Number(DELIVERY_SETTINGS.freeMin) || 0;
+  if(minLimit > 0 && sub >= minLimit) return 0;
+  return deliveryCharge;
+}
+
+function checkCouponLocation(docData){
+  const districtInput = document.getElementById('cDistrict')?.value.trim().toLowerCase() || '';
+  const thanaInput = document.getElementById('cThana')?.value.trim().toLowerCase() || '';
+  const addressInput = document.getElementById('cAddress')?.value.trim().toLowerCase() || '';
+  const reqDistrict = docData.allowedDistrict? docData.allowedDistrict.trim().toLowerCase() : '';
+  const reqThana = docData.allowedThana? docData.allowedThana.trim().toLowerCase() : '';
+  const reqArea = docData.allowedArea? docData.allowedArea.trim().toLowerCase() : '';
+  if(!reqDistrict &&!reqThana &&!reqArea) return true;
+  if(reqDistrict && !districtInput.includes(reqDistrict) && !reqDistrict.includes(districtInput)) return false;
+  if(reqThana && !thanaInput.includes(reqThana) && !reqThana.includes(thanaInput)) return false;
+  if(reqArea && !addressInput.includes(reqArea) && !districtInput.includes(reqArea) && !thanaInput.includes(reqArea)) return false;
+  return true;
+}
+
+// ✅ FIXED: Double charge বাদ
+function renderCart(){
+  if(isRendering) return;
+  isRendering = true;
+  let totalItemsCount = 0;
+  let sub = 0;
+  let totalCustomFee = 0;
+
+  orderList.innerHTML = cart.map((p)=>{
+    let perCustom = 0;
+    let basePrice = 0;
+    let itemQty = parseInt(p.qty || p.quantity || 1);
+    if(p.customDetails && p.customDetails.items && p.customDetails.items.length > 0) itemQty = p.customDetails.items.length;
+
+    if(p.isCustom || p.customDetails || p.custom){
+      perCustom = parseInt(p.customChargePerUnit || p.customCharge || 70);
+      if(p.basePrice) basePrice = parseInt(p.basePrice);
+      else basePrice = Math.max(0, parseInt(p.price||0) - perCustom);
+    } else {
+      basePrice = parseInt(p.basePrice || p.price || 0);
+    }
+
+    totalItemsCount += itemQty;
+    sub += (basePrice * itemQty);
+    if(perCustom>0) totalCustomFee += (perCustom * itemQty);
+
+    let customHtml = '';
+    if(p.customDetails){
+      const cd = p.customDetails;
+      let itemsHtml = cd.items ? cd.items.map(item => `<p class="leading-relaxed">• ${item.name || ''} ${item.number? `#${item.number}` : ''} (সাইজ: ${item.size || 'M'})</p>`).join('') : '';
+      customHtml = `<div class="text-[11px] bg-[#FFC300]/10 border border-[#FFC300]/20 rounded-lg p-2 mt-1.5 space-y-1">
+        ${cd.teamName? `<p class="font-bold text-[#FFC300]">টিম: ${cd.teamName}</p>` : ''}${itemsHtml}</div>`;
+    }
+
+    const displayTotal = (basePrice + perCustom) * itemQty;
+    return `<div class="flex gap-3 bg-black border border-white/10 rounded-xl p-2.5 items-start">
+      <img src="${p.imageUrl||p.images?.[0]||p.image||''}" class="w-14 h-14 bg-white rounded-lg object-contain shrink-0 mt-1">
+      <div class="flex-1 overflow-hidden">
+        <p class="text-xs font-bold truncate">${p.productName||p.name}</p>
+        <p class="text-[11px] text-white/50">কোয়ান্টিটি: ${itemQty} ${perCustom>0?`(Base ${basePrice}৳ + Custom ${perCustom}৳)`:''}</p>
+        ${customHtml}
+      </div>
+      <div class="text-xs font-black text-[#FFC300] shrink-0 mt-1">${displayTotal}৳</div>
+    </div>`;
+  }).join('');
+
+  if(itemCount) itemCount.innerText = totalItemsCount;
+  customCharge = totalCustomFee;
+  
+  const checkFreeSub = sub + customCharge;
+  const finalDelivery = getFinalDeliveryCharge(checkFreeSub);
+  const total = sub + customCharge + finalDelivery - couponDiscount;
+
+  if(subTotalEl) subTotalEl.innerText = sub+'৳';
+  if(deliveryFeeEl) deliveryFeeEl.innerText = finalDelivery===0?'FREE':finalDelivery+'৳';
+  if(totalPayEl) totalPayEl.innerText = (total<0?0:total)+'৳';
+
+  const freeBadge = document.getElementById('freeBadge');
+  if(freeBadge){
+    if(finalDelivery===0 && (freeDeliveryByCoupon || (DELIVERY_SETTINGS.freeMin>0 && checkFreeSub>=DELIVERY_SETTINGS.freeMin))){
+      freeBadge.classList.remove('hidden');
+      freeBadge.innerText = freeDeliveryByCoupon? 'COUPON FREE' : 'FREE ACTIVE';
+    } else freeBadge.classList.add('hidden');
+  }
+
+  if(couponDiscount>0 || freeDeliveryByCoupon){
+    document.getElementById('couponRow')?.classList.remove('hidden');
+    const cdEl = document.getElementById('couponDiscount');
+    if(cdEl) cdEl.innerText = freeDeliveryByCoupon? `-${deliveryCharge}৳` : `-${couponDiscount}৳`;
+  } else document.getElementById('couponRow')?.classList.add('hidden');
+  let customChargeEl = document.getElementById('customChargeFee');
+  let ccBox = document.getElementById('customChargeBox');
+  if(!ccBox && deliveryFeeEl){
+    const div = document.createElement('div'); div.id = 'customChargeBox'; div.className = 'flex justify-between text-xs';
+    div.innerHTML = `<span class="text-white/50">কাস্টম চার্জ</span><span id="customChargeFee" class="font-bold">0৳</span>`;
+    deliveryFeeEl?.parentElement?.after(div);
+    customChargeEl = document.getElementById('customChargeFee');
+    ccBox = document.getElementById('customChargeBox');
+  }
+  if(customChargeEl) customChargeEl.innerText = customCharge+'৳';
+  if(ccBox) ccBox.style.display = customCharge > 0? 'flex' : 'none';
+  if(isCustomOrder()){
+    if(advanceBox) advanceBox.classList.remove('hidden');
+    if(advancePay) advancePay.classList.remove('hidden');
+    if(normalPay) normalPay.classList.add('hidden');
+    const adv = Math.round(total * 0.5);
+    if(advanceAmountEl) advanceAmountEl.innerText = adv+'৳';
+    if(remainingAmountEl) remainingAmountEl.innerText = (total - adv)+'৳';
+  }else{
+    if(advanceBox) advanceBox.classList.add('hidden');
+    if(advancePay) advancePay.classList.add('hidden');
+    if(normalPay) normalPay.classList.remove('hidden');
+  }
+  isRendering = false;
+}
+async function applyCoupon(){
+  const input = document.getElementById('couponInput');
+  const msg = document.getElementById('couponMsg');
+  const btn = document.getElementById('applyCouponBtn');
+  const code = input.value.trim().toUpperCase();
+  if(!code){ if(msg){ msg.classList.remove('hidden'); msg.className='text-xs mt-2 text-red-400'; msg.innerText='কুপন লিখুন'; } return; }
+  if(btn){ btn.innerText='...'; btn.disabled=true; }
+  if(msg){ msg.classList.remove('hidden'); msg.className='text-xs mt-2 text-yellow-400'; msg.innerText='চেক হচ্ছে...'; }
+
+  try{
+    const q = query(collection(db,"coupons"), where("code","==",code));
+    const snap = await getDocs(q);
+    if(snap.empty){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='❌ ভুল কুপন কোড'; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+                                              }
+    const docData = snap.docs[0].data();
+    if(docData.active === false){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='❌ কুপন বন্ধ আছে'; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+    }
+
+    let baseSub = 0, customSub = 0;
+    cart.forEach(p=>{
+      let qty = p.customDetails?.items?.length || p.qty || 1;
+      let perC = (p.isCustom||p.customDetails)? parseInt(p.customChargePerUnit||70) : 0;
+      let base = p.basePrice? parseInt(p.basePrice) : (perC>0? Math.max(0, parseInt(p.price||0)-perC) : parseInt(p.price||0));
+      baseSub += base*qty;
+      if(perC>0) customSub += perC*qty;
+    });
+    const checkSub = baseSub + customSub;
+
+    if(docData.minOrder && checkSub < docData.minOrder){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText=`❌ ${docData.minOrder}৳+ অর্ডারে প্রযোজ্য`; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+    }
+
+    if(docData.maxUses && docData.usedCount >= docData.maxUses){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='❌ লিমিট শেষ'; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+    }
+
+    const districtInput = document.getElementById('cDistrict')?.value.trim().toLowerCase() || '';
+    const thanaInput = document.getElementById('cThana')?.value.trim().toLowerCase() || '';
+    const addressInput = document.getElementById('cAddress')?.value.trim().toLowerCase() || '';
+    if(!districtInput ||!thanaInput ||!addressInput){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='❌ আগে সম্পূর্ণ ঠিকানা, জেলা ও থানা লিখুন!'; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+    }
+    if(!checkCouponLocation(docData)){
+      if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText=`❌ এই কুপন ${docData.allowedDistrict||''} ${docData.allowedThana||''} ${docData.allowedArea||''} এর জন্য!`; }
+      couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+      document.getElementById('couponRow')?.classList.add('hidden'); renderCart();
+      if(btn){ btn.innerText='Apply'; btn.disabled=false; } return;
+    }
+
+    appliedCoupon = docData; freeDeliveryByCoupon = false; couponDiscount = 0;
+    if(docData.type === 'free_delivery'){
+      freeDeliveryByCoupon = true;
+      if(msg){ msg.className='text-xs mt-2 text-green-400'; msg.innerText=`✅ ${code} - ফ্রি ডেলিভারি!`; }
+      document.getElementById('couponName').innerText = `কুপন (${code}) - ফ্রি ডেলিভারি`;
+    }else if(docData.type === 'percent'){
+      couponDiscount = Math.round(checkSub * (docData.value/100));
+      if(msg){ msg.className='text-xs mt-2 text-green-400'; msg.innerText=`✅ ${code} - ${couponDiscount}৳ ছাড়!`; }
+    }else{
+      couponDiscount = docData.value || 0;
+      if(msg){ msg.className='text-xs mt-2 text-green-400'; msg.innerText=`✅ ${code} - ${couponDiscount}৳ ছাড়!`; }
+    }
+    document.getElementById('couponRow')?.classList.remove('hidden');
+    renderCart();
+  }catch(e){
+    if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='Error: '+e.message; }
+    couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false; renderCart();
+  }finally{ if(btn){ btn.innerText='Apply'; btn.disabled=false; } }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('applyCouponBtn')?.addEventListener('click', applyCoupon);
+  document.getElementById('couponInput')?.addEventListener('keypress', (e)=>{ if(e.key==='Enter') applyCoupon(); });
+  ['cDistrict','cThana','cAddress'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input', ()=>{
+      if(appliedCoupon && !checkCouponLocation(appliedCoupon)){
+        const msg = document.getElementById('couponMsg');
+        couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+        document.getElementById('couponRow')?.classList.add('hidden');
+        if(msg){ msg.className='text-xs mt-2 text-red-400'; msg.innerText='❌ ঠিকানা পরিবর্তনে কুপন বাতিল'; }
+        renderCart();
+      }
+    });
+  });
+});
+
+document.querySelectorAll('input[name="delivery"]').forEach(r=>{
+  r.onchange=()=>{
+    deliveryCharge = r.id === 'outsideRadio'? DELIVERY_SETTINGS.outsideDhaka : DELIVERY_SETTINGS.insideDhaka;
+    renderCart();
+  };
+});
+
+document.getElementById('payScreenshot')?.addEventListener('change', async(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const st=document.getElementById('payUploadStatus');
+  if(!st) return;
+  st.classList.remove('hidden'); st.innerText='আপলোড হচ্ছে...'; st.className='text-xs text-yellow-400 mt-1';
+  try{
+    const fd=new FormData(); fd.append('file',file); fd.append('upload_preset',CLOUDINARY_PRESET);
+    const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
+    const data=await res.json();
+    if(!data.secure_url) throw new Error('Upload failed');
+    payScreenshotUrl=data.secure_url;
+    document.getElementById('payPreview').src=payScreenshotUrl;
+    document.getElementById('payPreview').classList.remove('hidden');
+    st.innerText='✅ আপলোড হয়েছে'; st.className='text-xs text-green-400 mt-1';
+  }catch(err){ st.innerText='❌ '+err.message; st.className='text-xs text-red-400 mt-1'; }
+});
+
+document.getElementById('placeOrderBtn').onclick=async()=>{
+  if(appliedCoupon &&!checkCouponLocation(appliedCoupon)){
+    Swal.fire({icon:'error', background:'#121212', color:'#fff', title:'কুপন বাতিল', text:'আপনার ঠিকানা এই কুপনের জন্য প্রযোজ্য নয়'});
+    couponDiscount = 0; appliedCoupon = null; freeDeliveryByCoupon = false;
+    document.getElementById('couponRow')?.classList.add('hidden'); renderCart(); return;
+  }
+  const name=document.getElementById('cName').value.trim();
+  const phone=document.getElementById('cPhone').value.trim();
+  const address=document.getElementById('cAddress').value.trim();
+  const district=document.getElementById('cDistrict').value.trim();
+  const thana=document.getElementById('cThana').value.trim();
+  if(!name||!phone||!address||!district||!thana){ Swal.fire({icon:'warning', background:'#121212', color:'#fff', title:'সব তথ্য দিন!'}); return; }
+  if(isCustomOrder()){
+    const trx=document.getElementById('trxId').value.trim();
+    if(!trx){ Swal.fire({icon:'warning', background:'#121212', color:'#fff', title:'Transaction ID দিন'}); return; }
+  }
+  const btn=document.getElementById('placeOrderBtn');
+  btn.disabled=true; btn.innerText='অর্ডার হচ্ছে...';
+  try{
+    let baseSub = 0, customSub = 0;
+    cart.forEach(p=>{
+      let qty = p.customDetails?.items?.length || p.qty || p.quantity || 1;
+      let perC = (p.isCustom||p.customDetails||p.custom)? parseInt(p.customChargePerUnit||p.customCharge||70) : 0;
+      let base = p.basePrice? parseInt(p.basePrice) : (perC>0? Math.max(0, parseInt(p.price||0)-perC) : parseInt(p.price||0));
+      baseSub += base*qty;
+      if(perC>0) customSub += perC*qty;
+    });
+    const finalDelivery = getFinalDeliveryCharge(baseSub + customSub);
+    const total = baseSub + customSub + finalDelivery - couponDiscount;
+    const adv = isCustomOrder()? Math.round(total * 0.5) : 0;
+
+    // ✅ সুরক্ষিতভাবে কার্ট ম্যাপ করা যাতে ডিজাইন ইমেজ বা কাস্টম ডেটা হারিয়ে না যায়
+    const processedCart = cart.map(p => {
+      let itemQty = parseInt(p.qty || p.quantity || 1);
+      if(p.customDetails && p.customDetails.items && p.customDetails.items.length > 0) {
+        itemQty = p.customDetails.items.length;
+      }
+      return {
+        productName: p.productName || p.name || '',
+        price: Number(p.price || 0),
+        qty: itemQty,
+        quantity: itemQty,
+        imageUrl: p.imageUrl || p.images?.[0] || p.image || '',
+        selectedSize: p.selectedSize || 'One Size',
+        isCustom: !!(p.isCustom || p.customDetails || p.custom),
+        customDetails: p.customDetails ? {
+          teamName: p.customDetails.teamName || '',
+          items: p.customDetails.items || [],
+          designImageUrl: p.customDetails.designImageUrl || p.customDetails.designUrl || p.designImageUrl || '',
+          designUrl: p.customDetails.designUrl || p.customDetails.designImageUrl || p.designUrl || '',
+          note: p.customDetails.note || ''
+        } : null,
+        customChargePerUnit: Number(p.customChargePerUnit || 70)
+      };
+    });
+
+    const docRef = await addDoc(collection(db,'orders'),{
+      customer:{name, phone, address, district, thana, uid:auth.currentUser?.uid||null, email:auth.currentUser?.email||''},
+      items: processedCart, // ✅ এখানে আপডেট করা processedCart পাস করা হলো
+      subTotal: baseSub, 
+      deliveryCharge: finalDelivery, 
+      deliverySettings: DELIVERY_SETTINGS,
+      paymentSettings: PAYMENT_SETTINGS, 
+      customCharge: customSub,
+      couponCode: appliedCoupon?.code || '', 
+      couponDiscount: freeDeliveryByCoupon? deliveryCharge : couponDiscount,
+      couponType: appliedCoupon?.type || '', 
+      isFreeDeliveryCoupon: freeDeliveryByCoupon,
+      total, 
+      advanceAmount: adv, 
+      remainingAmount: total - adv, 
+      isCustom: isCustomOrder(),
+      paymentMethod: isCustomOrder() ? (document.querySelector('input[name="pay"]:checked')?.value || 'BKASH') : 'COD',
+      trxId: document.getElementById('trxId')?.value.trim() || '', 
+      payScreenshot: payScreenshotUrl || '',
+      status: 'pending', 
+      advancePaid: isCustomOrder(), 
+      createdAt: serverTimestamp()
+    });
+
+    if(isBuyNow){ localStorage.removeItem('ks_checkout_items'); localStorage.removeItem('ks_buy_now'); }
+    else{ localStorage.removeItem('ks_cart'); }
+    localStorage.removeItem('ks_advance_required');
+    Swal.fire({icon: 'success', background: '#121212', color: '#fff', title: 'অর্ডার সফল!', text: freeDeliveryByCoupon? 'ফ্রি ডেলিভারি!' : ''}).then(()=>{ location.href=`invoice.html?id=${docRef.id}`; });
+  }catch(e){ Swal.fire({icon:'error', background:'#121212', color:'#fff', title:'Error', text:e.message}); btn.disabled=false; btn.innerText='অর্ডার কনফার্ম করুন'; }
+};
+
+loadDeliverySettings();
+loadPaymentSettings();
+window.recalculateTotal = (fee) => { if(typeof fee === 'number') deliveryCharge = fee; renderCart(); };
+window.getCouponDiscount = () => couponDiscount;
+window.getAppliedCoupon = () => appliedCoupon;
+window.isFreeDeliveryByCoupon = () => freeDeliveryByCoupon;
+                
