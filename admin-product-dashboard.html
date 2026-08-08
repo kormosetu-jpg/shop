@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Product Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Product Dashboard</h1><p class="text-xs text-white/40">লাইভ + স্টক + Sold - Full</p></div>
+  </div>
+  <a href="add-product.html" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">+ Add</a>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28">
+
+  <div class="grid grid-cols-2 gap-3 mt-6">
+    <div class="bg-[#121212] border border-[#FFC300]/30 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট লাইভ প্রোডাক্ট</p>
+      <p id="liveCount" class="text-3xl font-black mt-2 text-[#FFC300]">0</p>
+      <p class="text-xs text-white/30 mt-1">Website এ Live</p>
+    </div>
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট স্টক টাইপ</p>
+      <p id="stockTypes" class="text-3xl font-black mt-2">0</p>
+      <p class="text-xs text-white/30 mt-1">IN করা Style</p>
+    </div>
+    <div class="bg-[#121212] border border-green-500/20 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">বর্তমান স্টক আছে</p>
+      <p id="stockQty" class="text-3xl font-black mt-2 text-green-400">0 pcs</p>
+      <p id="stockValue" class="text-xs text-white/30 mt-1">Value ৳0</p>
+    </div>
+    <div class="bg-[#121212] border border-red-500/20 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট Sold হয়েছে</p>
+      <p id="soldQty" class="text-3xl font-black mt-2 text-red-400">0 pcs</p>
+      <p id="soldRate" class="text-xs text-white/30 mt-1">0% Sold</p>
+    </div>
+    <div class="bg-[#FFC300] p-5 rounded-3xl text-black">
+      <p class="text-xs opacity-60">সব প্রোডাক্ট কেনা</p>
+      <p id="totalBuyCost" class="text-2xl font-black mt-2">৳0</p>
+      <p class="text-xs opacity-60 mt-1">Total Buy Cost</p>
+    </div>
+    <div class="bg-[#121212] border border-white/10 p-5 rounded-3xl">
+      <p class="text-xs text-white/40">মোট IN করা</p>
+      <p id="totalInQty" class="text-2xl font-black mt-2">0 pcs</p>
+      <p class="text-xs text-white/30 mt-1">সব মিলে IN</p>
+    </div>
+    <div class="bg-red-500/10 border border-red-500/30 p-5 rounded-3xl col-span-2 flex justify-between items-center">
+      <div>
+        <p class="text-xs text-red-300/60">Low Stock Alert</p>
+        <p id="lowStockCount" class="text-2xl font-black mt-1 text-red-400">0 টা</p>
+        <p id="lowStockSub" class="text-xs text-white/30">10 pcs এর নিচে</p>
+      </div>
+      <a href="stock.html" class="bg-red-500 text-white px-4 py-2 rounded-full text-xs font-black">দেখুন →</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mt-8">
+    <a href="products.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl flex items-center gap-4 hover:border-[#FFC300]/50">
+      <div class="w-12 h-12 bg-white text-black rounded-2xl flex items-center justify-center text-lg font-black">P</div>
+      <div><p class="font-black text-sm">Live Product</p><p id="liveCount2" class="text-xs text-white/40">0 টা Live</p></div>
+    </a>
+    <a href="stock.html" class="bg-[#121212] border border-[#FFC300]/30 p-5 rounded-3xl flex items-center gap-4">
+      <div class="w-12 h-12 bg-[#FFC300]/20 text-[#FFC300] rounded-2xl flex items-center justify-center text-lg">📊</div>
+      <div><p class="font-black text-sm text-[#FFC300]">Stock Details</p><p id="stockQty2" class="text-xs text-white/40">0 pcs আছে</p></div>
+    </a>
+    <a href="inbound.html" class="bg-[#121212] border border-white/10 p-5 rounded-3xl flex items-center gap-4">
+      <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-lg">📥</div>
+      <div><p class="font-black text-sm">Inbound</p><p class="text-xs text-white/40">স্টক ইন</p></div>
+    </a>
+    <a href="add-product.html" class="bg-white text-black p-5 rounded-3xl flex items-center gap-4">
+      <div class="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center text-lg font-black">+</div>
+      <div><p class="font-black text-sm">Add Product</p><p class="text-xs opacity-60">নতুন যোগ</p></div>
+    </a>
+  </div>
+
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl bg-[#FFC300] text-black"><span class="text-lg">📦</span><span class="text- font-black">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">💰</span><span class="text-">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">🛒</span><span class="text-">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">👥</span><span class="text-">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📊</span><span class="text-">Hisab</span></a>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) return location.href='admin-login.html';
+  const snap = await getDoc(doc(db,"admins",user.uid));
+  if(!snap.exists()) return location.href='admin-login.html';
+  document.body.classList.remove('hidden');
+  loadStats();
+});
+
+async function loadStats(){
+  let liveSize=0;
+  try{
+    let snap;
+    try{ snap = await getDocs(collection(db,"products_live")); }catch{ snap = await getDocs(collection(db,"products")); }
+    liveSize = snap.size;
+    document.getElementById('liveCount').innerText = liveSize;
+    const el2 = document.getElementById('liveCount2');
+    if(el2) el2.innerText = liveSize+' টা Live';
+  }catch{}
+
+  try{
+    const snap = await getDocs(collection(db,"inbounds"));
+    let totalInQty=0, currentStockQty=0, totalCost=0, currentValue=0;
+    let lowStyles = new Set();
+    let outOfStockStyles = new Set();
+    
+    snap.forEach(d=>{
+      const data = d.data();
+      let inQty=0, stockQty=0;
+      let hasLowSize=false;
+      let hasOutSize=false;
+
+      if(data.sizes && Array.isArray(data.sizes)){
+        data.sizes.forEach(s=>{
+          const total = s.serials? s.serials.length : Number(s.qty||0);
+          const stock = s.serials? s.serials.filter(x=>x.status==='in').length : Number(s.qty||0);
+          inQty+=total;
+          stockQty+=stock;
+          // ✅ FIX: Size Wise Low Check - Stock File এর মতো
+          if(stock===0){
+            hasOutSize=true;
+          } else if(stock>0 && stock<=10){
+            hasLowSize=true;
+          }
+        });
+      } else {
+        inQty = Number(data.totalQty || data.qty || 0);
+        stockQty = inQty;
+        if(stockQty===0) hasOutSize=true;
+        else if(stockQty>0 && stockQty<=10) hasLowSize=true;
+      }
+
+      const buyPrice = Number(data.buyPrice||0);
+      totalInQty+=inQty;
+      currentStockQty+=stockQty;
+      totalCost+= inQty * buyPrice;
+      currentValue+= stockQty * buyPrice;
+
+      if(hasOutSize) outOfStockStyles.add(d.id);
+      if(hasLowSize) lowStyles.add(d.id);
+    });
+
+    const soldQty = totalInQty - currentStockQty;
+    const soldRate = totalInQty>0? ((soldQty/totalInQty)*100).toFixed(1) : 0;
+
+    // ✅ Total Low = Out of Stock + Low Stock (Stock File এর মতো 0 pcs সহ)
+    const totalLowCount = lowStyles.size + outOfStockStyles.size;
+
+    document.getElementById('stockTypes').innerText = snap.size;
+    document.getElementById('stockQty').innerText = currentStockQty+' pcs';
+    document.getElementById('stockValue').innerText = 'Value ৳'+currentValue;
+    document.getElementById('stockQty2').innerText = currentStockQty+' pcs আছে';
+    document.getElementById('totalInQty').innerText = totalInQty+' pcs';
+    document.getElementById('totalBuyCost').innerText = '৳'+totalCost;
+    document.getElementById('soldQty').innerText = soldQty+' pcs';
+    document.getElementById('soldRate').innerText = soldRate+'% Sold';
+    
+    // ✅ এখন Stock File এর সাথে মিলবে
+    document.getElementById('lowStockCount').innerText = totalLowCount+' টা';
+    document.getElementById('lowStockSub').innerText = `${lowStyles.size} Low + ${outOfStockStyles.size} Out | 10 pcs এর নিচে`;
+
+  }catch(e){ console.log(e); }
+}
+</script>
+</body>
+</html>
