@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Address - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-[#080808] text-white">
+
+<header class="sticky top-0 z-50 bg-[#080808] border-b border-white/10">
+  <div class="max-w-3xl mx-auto px-3 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <button onclick="location.href='profile.html'" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-sm">←</button>
+      <h1 class="font-black text-sm" data-bn="ডেলিভারি ঠিকানা" data-en="Delivery Address">ডেলিভারি ঠিকানা</h1>
+    </div>
+    <button onclick="openModal()" class="bg-[#FFC300] text-black px-4 py-1.5 rounded-full font-black text-xs" data-bn="+ নতুন যোগ করুন" data-en="+ Add New">+ নতুন যোগ করুন</button>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-3 py-5 space-y-4 pb-28">
+  <div id="addressList" class="space-y-3">
+    <p class="text-center text-white/20 text-sm py-10">লোড হচ্ছে...</p>
+  </div>
+</main>
+
+<!-- ADD / EDIT MODAL -->
+<div id="addrModal" class="fixed inset-0 z-[100] hidden">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeModal()"></div>
+  <div class="absolute bottom-0 left-0 right-0 bg-[#121212] rounded-t-3xl p-5 max-w-3xl mx-auto border-t border-white/10">
+    <div class="flex justify-between items-center mb-4">
+      <h2 id="modalTitle" class="font-black" data-bn="নতুন ঠিকানা" data-en="New Address">নতুন ঠিকানা</h2>
+      <button onclick="closeModal()" class="w-8 h-8 bg-white/10 rounded-full">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <input id="fName" placeholder="নাম" data-bn-placeholder="পূর্ণ নাম" data-en-placeholder="Full Name" class="bg-[#080808] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+        <input id="fPhone" placeholder="ফোন" data-bn-placeholder="মোবাইল নম্বর" data-en-placeholder="Phone Number" class="bg-[#080808] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+      </div>
+      <select id="fType" class="w-full bg-[#080808] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none">
+        <option value="Home">🏠 Home</option>
+        <option value="Office">🏢 Office</option>
+        <option value="Other">📍 Other</option>
+      </select>
+      <input id="fDistrict" placeholder="জেলা" data-bn-placeholder="জেলা / শহর" data-en-placeholder="District / City" class="w-full bg-[#080808] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FFC300]">
+      <textarea id="fAddress" rows="2" placeholder="বিস্তারিত ঠিকানা" data-bn-placeholder="বাড়ি, রোড, এলাকা..." data-en-placeholder="House, Road, Area..." class="w-full bg-[#080808] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#FFC300]"></textarea>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="fDefault" class="accent-[#FFC300]"> <span data-bn="ডিফল্ট ঠিকানা হিসেবে সেট করুন" data-en="Set as default address">ডিফল্ট ঠিকানা হিসেবে সেট করুন</span></label>
+      <button id="saveBtn" class="w-full bg-[#FFC300] text-black py-3.5 rounded-full font-black text-sm mt-2" data-bn="সেভ করুন" data-en="Save Address">সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let currentUser = null;
+let editId = null;
+let currentLang = localStorage.getItem('ks_lang')||'bn';
+
+function applyLang(lang){
+  currentLang=lang;
+  document.querySelectorAll('[data-bn]').forEach(el=>{
+    const t=el.getAttribute(`data-${lang}`); if(t) el.innerText=t;
+  });
+  document.querySelectorAll('[data-bn-placeholder]').forEach(el=>{
+    const t=el.getAttribute(`data-${lang}-placeholder`); if(t) el.placeholder=t;
+  });
+}
+window.applyLang=applyLang; applyLang(currentLang);
+
+const modal = document.getElementById('addrModal');
+window.openModal = (data=null)=>{
+  editId = data?.id || null;
+  document.getElementById('modalTitle').innerText = editId? (currentLang==='bn'?'ঠিকানা এডিট':'Edit Address') : (currentLang==='bn'?'নতুন ঠিকানা':'New Address');
+  document.getElementById('fName').value = data?.name||'';
+  document.getElementById('fPhone').value = data?.phone||'';
+  document.getElementById('fType').value = data?.type||'Home';
+  document.getElementById('fDistrict').value = data?.district||'';
+  document.getElementById('fAddress').value = data?.address||'';
+  document.getElementById('fDefault').checked = data?.isDefault||false;
+  modal.classList.remove('hidden');
+}
+window.closeModal = ()=> modal.classList.add('hidden');
+
+async function loadAddresses(){
+  const list = document.getElementById('addressList');
+  if(!currentUser){ list.innerHTML = `<p class='text-center py-10'><a href='login.html' class='text-[#FFC300] underline'>লগইন করুন</a></p>`; return; }
+  try{
+    const snap = await getDocs(collection(db, `users/${currentUser.uid}/addresses`));
+    if(snap.empty){
+      list.innerHTML = `<div class='text-center py-16'><p class='text-4xl'>📍</p><p class='text-white/30 text-sm mt-3' data-bn='কোনো ঠিকানা সেভ করা নেই' data-en='No saved address'>কোনো ঠিকানা সেভ করা নেই</p></div>`;
+      applyLang(currentLang); return;
+    }
+    let html='';
+    snap.forEach(d=>{
+      const a=d.data();
+      html+=`
+        <div class="bg-[#121212] border ${a.isDefault?'border-[#FFC300]/50':'border-white/10'} rounded-2xl p-4 relative">
+          ${a.isDefault?`<span class='absolute top-3 right-3 bg-[#FFC300] text-black text- px-2 py-0.5 rounded-full font-black'>DEFAULT</span>`:''}
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-sm">${a.type==='Home'?'🏠':a.type==='Office'?'🏢':'📍'}</div>
+            <div class="flex-1">
+              <h3 class="font-bold text-sm">${a.name} <span class="text-white/40 font-normal">• ${a.type}</span></h3>
+              <p class="text-sm text-white/60 mt-1">${a.phone}</p>
+              <p class="text-sm text-white/40 mt-1">${a.address}, ${a.district}</p>
+              <div class="flex gap-2 mt-3">
+                <button onclick='editAddr("${d.id}")' class="bg-white/10 px-3 py-1.5 rounded-full text-xs">Edit</button>
+                <button onclick='deleteAddr("${d.id}")' class="bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full text-xs">Delete</button>
+                ${!a.isDefault?`<button onclick='setDefault("${d.id}")' class="bg-[#FFC300]/10 text-[#FFC300] px-3 py-1.5 rounded-full text-xs">Set Default</button>`:''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+    list.innerHTML=html;
+  }catch(e){ list.innerHTML=`<p class='text-red-400 text-sm text-center'>${e.message}</p>`; }
+}
+
+window.editAddr = async(id)=>{
+  const snap = await getDoc(doc(db, `users/${currentUser.uid}/addresses`, id));
+  if(snap.exists()) openModal({id,...snap.data()});
+}
+window.deleteAddr = async(id)=>{
+  const r = await Swal.fire({title:'Delete?', icon:'warning', showCancelButton:true, background:'#121212', color:'#fff', confirmButtonColor:'#ef4444'});
+  if(!r.isConfirmed) return;
+  await deleteDoc(doc(db, `users/${currentUser.uid}/addresses`, id));
+  loadAddresses();
+}
+window.setDefault = async(id)=>{
+  const snap = await getDocs(collection(db, `users/${currentUser.uid}/addresses`));
+  const batch = writeBatch(db);
+  snap.forEach(d=> batch.update(d.ref, {isDefault: d.id===id}));
+  await batch.commit();
+  loadAddresses();
+}
+
+document.getElementById('saveBtn').onclick = async()=>{
+  if(!currentUser) return location.href='login.html';
+  const data = {
+    name: document.getElementById('fName').value.trim(),
+    phone: document.getElementById('fPhone').value.trim(),
+    type: document.getElementById('fType').value,
+    district: document.getElementById('fDistrict').value.trim(),
+    address: document.getElementById('fAddress').value.trim(),
+    isDefault: document.getElementById('fDefault').checked,
+    createdAt: new Date()
+  };
+  if(!data.name ||!data.phone ||!data.address){ Swal.fire({icon:'warning', background:'#121212', color:'#fff', title:'সব ফিল্ড পূরণ করুন'}); return; }
+
+  try{
+    if(data.isDefault){
+      const s = await getDocs(collection(db, `users/${currentUser.uid}/addresses`));
+      const b = writeBatch(db);
+      s.forEach(d=> b.update(d.ref, {isDefault:false}));
+      await b.commit();
+    }
+    if(editId){
+      await updateDoc(doc(db, `users/${currentUser.uid}/addresses`, editId), data);
+    } else {
+      await addDoc(collection(db, `users/${currentUser.uid}/addresses`), data);
+    }
+    closeModal();
+    Swal.fire({icon:'success', background:'#121212', color:'#fff', title:'সেভ হয়েছে!', timer:1200, showConfirmButton:false});
+    loadAddresses();
+  }catch(e){ Swal.fire({icon:'error', background:'#121212', color:'#fff', title:e.message}); }
+}
+
+onAuthStateChanged(auth, async(user)=>{
+  currentUser=user;
+  // 🚫 BANNED CHECK
+  if(user){
+    const s = await getDoc(doc(db,"users",user.uid));
+    if(s.exists() && s.data().banned===true){
+      await Swal.fire({icon:'error', background:'#121212', color:'#fff', title:'আপনার অ্যাকাউন্ট ব্যান!', allowOutsideClick:false, allowEscapeKey:false});
+      location.href='index.html'; return;
+    }
+  }
+  loadAddresses();
+});
+</script>
+</body>
+</html>
