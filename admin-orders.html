@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Orders - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Hind Siliguri',sans-serif}
+.hidden{display:none!important}
+.no-scrollbar::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body class="bg-[#080808] text-white min-h-screen hidden">
+<header class="sticky top-0 z-50 bg-[#080808]/90 backdrop-blur border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button onclick="location.href='admin-dashboard.html'" class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center font-bold">←</button>
+      <h1 class="font-black text-sm md:text-base tracking-widest">ZH ADMIN - ORDERS</h1>
+    </div>
+    <div class="flex gap-2">
+      <a href="admin-order-history.html" class="bg-[#FFC300] text-black px-4 py-1.5 rounded-full text-xs font-black">History</a>
+      <button onclick="exportExcel()" class="bg-green-600 px-3 py-1.5 rounded-full text-xs font-bold">Excel</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-5 space-y-4">
+  <div class="bg-[#121212] border border-[#FFC300]/20 rounded-2xl p-3 flex flex-col md:flex-row gap-3 items-center">
+    <p class="text-xs font-bold shrink-0">📅 মাস:</p>
+    <select id="monthFilter" class="flex-1 w-full bg-black border border-white/10 rounded-full px-4 py-2 text-xs outline-none">
+      <option value="all">এই মাস</option>
+      <option value="0">জানুয়ারি</option><option value="1">ফেব্রুয়ারি</option><option value="2">মার্চ</option><option value="3">এপ্রিল</option>
+      <option value="4">মে</option><option value="5">জুন</option><option value="6">জুলাই</option><option value="7">আগস্ট</option>
+      <option value="8">সেপ্টেম্বর</option><option value="9">অক্টোবর</option><option value="10">নভেম্বর</option><option value="11">ডিসেম্বর</option>
+    </select>
+    <select id="yearFilter" class="w-full md:w-auto bg-black border border-white/10 rounded-full px-4 py-2 text-xs outline-none">
+      <option value="2026" selected>2026</option><option value="2025">2025</option><option value="all">All Year</option>
+    </select>
+    <button id="resetMonthBtn" class="w-full md:w-auto bg-white/10 px-4 py-2 rounded-full text-xs">রিসেট</button>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3"><p class="text-xs text-white/40">একটিভ অর্ডার</p><p id="activeOrders" class="font-black text-xl">0</p><p id="activeOrdersSub" class="text-[10px] text-white/40 mt-1"></p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3"><p class="text-xs text-white/40">মোট টাকা</p><p id="totalAmount" class="font-black text-xl">0৳</p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3"><p class="text-xs text-white/40">পেন্ডিং</p><p id="pendingCount" class="font-black text-xl text-yellow-400">0</p></div>
+    <div class="bg-[#121212] border border-[#FFC300]/30 rounded-2xl p-3"><p class="text-xs text-white/40">প্রোডাক্ট ইনকাম</p><p id="totalIncome" class="font-black text-xl text-[#FFC300]">0৳</p><p id="totalIncomeSub" class="text-[10px] mt-1"></p></div>
+    <div class="bg-[#121212] border border-blue-500/30 rounded-2xl p-3"><p class="text-xs text-white/40">ডেলিভারি চার্জ</p><p id="totalDelivery" class="font-black text-xl text-blue-400">0৳</p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3"><p class="text-xs text-white/40">এই মাসে</p><p id="todayOrders" class="font-black text-xl">0</p></div>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-2xl p-4 space-y-3">
+    <input id="searchInput" type="text" placeholder="ফোন, অর্ডার ID, নাম দিয়ে সার্চ..." class="w-full bg-black border border-white/10 rounded-full px-4 py-2.5 text-sm outline-none focus:border-[#FFC300]">
+    <div class="flex flex-col md:flex-row gap-3">
+      <input id="filterDate" type="date" class="flex-1 bg-black border border-white/10 rounded-full px-4 py-2.5 text-xs outline-none">
+      <select id="statusFilter" class="flex-1 bg-black border border-white/10 rounded-full px-4 py-2.5 text-xs outline-none">
+        <option value="all">All Active</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="on_the_way">On The Way</option>
+      </select>
+      <button id="filterBtn" class="bg-[#FFC300] text-black px-6 py-2.5 rounded-full font-black text-sm">ফিল্টার</button>
+    </div>
+    <div class="flex gap-2 text-xs">
+      <button onclick="filterCustom('all')" id="cTab-all" class="px-3 py-1.5 rounded-full bg-[#FFC300] text-black font-bold">All</button>
+      <button onclick="filterCustom('custom')" id="cTab-custom" class="px-3 py-1.5 rounded-full bg-white/10">Custom Only</button>
+      <button onclick="filterCustom('normal')" id="cTab-normal" class="px-3 py-1.5 rounded-full bg-white/10">Normal Only</button>
+    </div>
+  </div>
+
+  <div id="ordersList" class="space-y-3"></div>
+  <div id="loadingBox" class="bg-[#121212] border border-white/10 rounded-2xl p-10 text-center text-white/60">লোড হচ্ছে...</div>
+</main>
+
+<!-- Status Modal -->
+<div id="statusModal" class="fixed inset-0 z-50 bg-black/90 hidden flex items-center justify-center p-4">
+  <div class="bg-[#181818] border border-white/10 rounded-3xl p-5 w-full max-w-lg space-y-3 max-h-[90vh] overflow-y-auto no-scrollbar">
+    <h3 class="font-black">স্ট্যাটাস আপডেট - Serial Wise</h3>
+    <div id="modalOrderInfo" class="bg-black border border-white/10 rounded-xl p-3 text-xs"></div>
+    <select id="newStatus" class="w-full bg-black border border-white/10 rounded-xl p-3 text-sm outline-none">
+      <option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="on_the_way">On The Way</option><option value="delivered">Delivered - Serial Sold</option><option value="cancelled">Cancelled - Serial In</option>
+    </select>
+    <div id="serialScanArea" class="hidden bg-black border border-[#FFC300]/30 rounded-2xl p-3 space-y-3">
+      <p class="text-xs font-black text-[#FFC300]">📦 প্রতিটা সাইজের জন্য আলাদা Scan</p>
+      <div id="itemsToScan" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+      <div class="flex gap-2">
+        <input id="serialInput" placeholder="Barcode স্ক্যান করুন..." class="flex-1 bg-[#121212] border border-white/10 rounded-xl px-3 py-2.5 text-xs outline-none">
+        <button id="addSerialBtn" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">Add</button>
+      </div>
+      <button id="openScannerBtn" class="w-full bg-white/10 py-2.5 rounded-full text-xs font-bold">📷 ক্যামেরা দিয়ে স্ক্যান</button>
+      <div id="scannedList" class="space-y-1"></div>
+    </div>
+    <div class="flex gap-2 pt-2">
+      <button id="closeModalBtn" class="flex-1 bg-white/10 py-2.5 rounded-full text-xs font-bold">বাতিল</button>
+      <button id="updateStatusBtn" class="flex-1 bg-[#FFC300] text-black py-2.5 rounded-full font-black text-xs">আপডেট করুন</button>
+    </div>
+  </div>
+</div>
+
+<div id="scannerModal" class="fixed inset-0 bg-black/95 hidden z-[70] p-4 flex flex-col items-center justify-center">
+  <div class="bg-[#181818] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden">
+    <div class="p-4 border-b border-white/10 flex justify-between items-center"><h3 class="font-black text-sm">Barcode স্ক্যান</h3><button id="closeScanner" class="w-8 h-8 bg-white/10 rounded-full">✕</button></div>
+    <div class="p-3"><div id="reader" class="rounded-xl overflow-hidden bg-black"></div></div>
+  </div>
+</div>
+
+<script type="module" src="./admin-orders.js"></script>
+<script>
+window.filterCustom = (type)=>{
+  ['all','custom','normal'].forEach(t=>{
+    document.getElementById(`cTab-${t}`).className = t===type? 'px-3 py-1.5 rounded-full bg-[#FFC300] text-black font-bold' : 'px-3 py-1.5 rounded-full bg-white/10';
+  });
+  window.dispatchEvent(new CustomEvent('customFilter', {detail: type}));
+}
+</script>
+</body>
+</html>
