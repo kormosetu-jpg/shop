@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hisab Dashboard - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">Hisab লোড হচ্ছে...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <button onclick="location.href='admin-dashboard.html'" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</button>
+    <div><h1 class="font-black leading-none">Hisab Dashboard</h1><p id="filterLabel" class="text-xs text-white/40">গাড়ি ভাড়া সহ Net লাভ</p></div>
+  </div>
+  <div class="flex gap-2">
+    <a href="admin-master-invoice.html" class="bg-white text-black px-3 py-2 rounded-full text-xs font-black">🧾 Invoice</a>
+    <button onclick="window.print()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">🖨️</button>
+  </div>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28 space-y-4">
+
+  <a href="admin-master-invoice.html" class="block bg-gradient-to-r from-[#FFC300] to-yellow-500 rounded-3xl p-4 flex justify-between items-center">
+    <div class="flex gap-3 items-center">
+      <div class="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-xl">🧾</div>
+      <div>
+        <p class="font-black text-black text-sm">Master Summary Invoice</p>
+        <p class="text-xs text-black/60">এক ক্লিকে সব হিসাব - ইনভয়েসের মত</p>
+      </div>
+    </div>
+    <div class="bg-black text-[#FFC300] px-4 py-2 rounded-full text-xs font-black">Open →</div>
+  </a>
+
+  <div class="bg-[#121212] border border-white/10 rounded-2xl p-3 flex gap-2">
+    <input id="fromDate" type="date" class="flex-1 bg-black border border-white/10 rounded-full px-3 py-2 text-xs text-white">
+    <input id="toDate" type="date" class="flex-1 bg-black border border-white/10 rounded-full px-3 py-2 text-xs text-white">
+    <button onclick="applyDateFilter()" class="bg-[#FFC300] text-black px-4 py-2 rounded-full text-xs font-black">ফিল্টার</button>
+    <button onclick="resetFilter()" class="bg-white/10 px-3 py-2 rounded-full text-xs">রিসেট</button>
+  </div>
+
+  <!-- ✅ ক্যানসেলড অর্ডার ও প্রোডাক্টের সংখ্যা দেখানোর নতুন বক্স -->
+  <div class="bg-[#121212] border border-red-500/30 rounded-3xl p-5">
+    <h3 class="font-black text-sm text-red-400 mb-3">❌ Cancelled Orders Hisab (ক্যানসেলড)</h3>
+    <div class="grid grid-cols-2 gap-3 text-xs">
+      <div class="bg-black rounded-2xl p-4 border border-red-500/10">
+        <p class="text-white/40">মোট ক্যানসেলড অর্ডার</p>
+        <p id="cancelledOrderCount" class="text-2xl font-black mt-1 text-red-400">0 টি</p>
+      </div>
+      <div class="bg-black rounded-2xl p-4 border border-red-500/10">
+        <p class="text-white/40">ক্যানসেলড প্রোডাক্ট পরিমাণ</p>
+        <p id="cancelledProductQty" class="text-2xl font-black mt-1 text-red-400">0 pcs</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <h3 class="font-black text-sm text-[#FFC300] mb-3">📥 Buy Hisab (কেনা)</h3>
+    <div class="grid grid-cols-2 gap-3 text-xs">
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">মোট IN</p><p id="hBuyQty" class="text-2xl font-black mt-1">0 pcs</p><p id="hBuyCount" class="text-white/30">0 বার</p></div>
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">মোট Buy Cost</p><p id="hBuyCost" class="text-2xl font-black mt-1">৳0</p><p id="hBuyPeriod" class="text-white/30">সব কেনা</p></div>
+      <div class="bg-black rounded-2xl p-4 border border-green-500/20"><p class="text-white/40">বর্তমান Stock</p><p id="hStockQty" class="text-xl font-black mt-1 text-green-400">0 pcs</p><p id="hStockVal" class="text-white/30">Value ৳0</p></div>
+      <div class="bg-black rounded-2xl p-4 border border-red-500/20"><p class="text-white/40">Sold এর Buy Cost</p><p id="hSoldCost" class="text-xl font-black mt-1 text-red-400">৳0</p><p id="hSoldQty" class="text-white/30">0 pcs Sold</p></div>
+    </div>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <h3 class="font-black text-sm text-green-400 mb-3">💰 Sell Hisab (বিক্রি)</h3>
+    <div class="grid grid-cols-2 gap-3 text-xs">
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">Online Product Sell</p><p id="hOnlineProd" class="text-lg font-black mt-1">৳0</p><p id="hOnlineCount" class="text-white/30">0 Delivered</p></div>
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">Online Delivery</p><p id="hOnlineDel" class="text-lg font-black mt-1 text-[#FFC300]">৳0</p></div>
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">Offline Product Sell</p><p id="hOffProd" class="text-lg font-black mt-1">৳0</p><p id="hOffCount" class="text-white/30">0 টা</p></div>
+      <div class="bg-black rounded-2xl p-4"><p class="text-white/40">Offline Delivery</p><p id="hOffDel" class="text-lg font-black mt-1">৳0</p></div>
+      <div class="bg-[#FFC300] text-black rounded-2xl p-4 col-span-2 flex justify-between"><div><p class="text-xs opacity-60">মোট Sell</p><p id="hTotalSell" class="text-2xl font-black mt-1">৳0</p></div><div class="text-right"><p class="text-xs opacity-60">Product Only</p><p id="hTotalProdSell" class="text-lg font-black">৳0</p></div></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-[#121212] border border-green-500/30 rounded-2xl p-4 text-center"><p class="text-xs text-white/40">জমা</p><p id="hPaid" class="text-xl font-black mt-1 text-green-400">৳0</p></div>
+    <div class="bg-[#121212] border border-red-500/30 rounded-2xl p-4 text-center"><p class="text-xs text-white/40">বাকি</p><p id="hDue" class="text-xl font-black mt-1 text-red-400">৳0</p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-4 text-center"><p class="text-xs text-white/40">Delivery</p><p id="hDelTotal" class="text-xl font-black mt-1 text-[#FFC300]">৳0</p></div>
+  </div>
+
+  <div class="bg-gradient-to-br from-[#FFC300] to-yellow-500 rounded-3xl p-6 text-black">
+    <h3 class="font-black text-sm opacity-60">📈 NET PROFIT (খরচ বাদে)</h3>
+    <div class="grid grid-cols-2 gap-4 mt-4 text-xs">
+      <div><p class="opacity-60">Product Profit</p><p id="hProdProfit" class="text-xl font-black mt-1">৳0</p></div>
+      <div><p class="opacity-60">Delivery Income</p><p id="hDelProfit" class="text-xl font-black mt-1">৳0</p></div>
+      <div class="col-span-2 bg-black/10 rounded-2xl p-3 mt-2 space-y-1">
+        <div class="flex justify-between"><span>🚛 গাড়ি ভাড়া</span><span id="hGarivara" class="font-black">৳0</span></div>
+        <div class="flex justify-between"><span>💸 মোট খরচ</span><span id="hExpense" class="font-black">৳0</span></div>
+      </div>
+      <div class="col-span-2 border-t border-black/10 pt-4 flex justify-between items-center"><p class="font-bold">NET PROFIT</p><p id="hNetProfit" class="text-4xl font-black">৳0</p></div>
+    </div>
+  </div>
+
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <h3 class="font-black text-sm mb-4">📂 সব রিপোর্ট ও খাতা</h3>
+    <div class="grid grid-cols-2 gap-3">
+      <a href="admin-master-invoice.html" class="bg-white text-black p-4 rounded-2xl flex items-center gap-3 border-2 border-[#FFC300]"><div class="w-10 h-10 bg-[#FFC300] rounded-xl flex items-center justify-center text-lg">🧾</div><div><p class="font-black text-xs">Master Invoice</p><p class="text-[10px] opacity-60">সব Total সামারি</p></div></a>
+      <a href="admin-full-report.html" class="bg-[#FFC300] text-black p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-black text-[#FFC300] rounded-xl flex items-center justify-center text-lg">📄</div><div><p class="font-black text-xs">Full Report</p><p class="text-[10px] opacity-60">এক ক্লিকে সব রিপোর্ট</p></div></a>
+      <a href="admin-due-khata.html" class="bg-[#121212] border border-red-500/30 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-red-500/20 text-red-400 rounded-xl flex items-center justify-center text-lg">📒</div><div><p class="font-black text-xs text-red-400">বাকির খাতা</p><p id="dueCount" class="text-[10px] text-white/40">0 জন বাকি</p></div></a>
+      <a href="admin-expense.html" class="bg-[#121212] border border-white/10 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg">💸</div><div><p class="font-black text-xs">বাড়তি খরচ</p><p id="expenseTotal" class="text-[10px] text-white/40">৳0 খরচ</p></div></a>
+      <a href="admin-employee-dashboard.html" class="bg-[#121212] border border-white/10 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-lg">👥</div><div><p class="font-black text-xs">Employee Hisab</p><p id="empSalary" class="text-[10px] text-white/40">Salary + Advance</p></div></a>
+      <a href="stock.html" class="bg-[#121212] border border-white/10 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center text-lg">📦</div><div><p class="font-black text-xs">Stock Report</p><p class="text-[10px] text-white/40">বর্তমান স্টক</p></div></a>
+      <a href="admin-sell-dashboard.html" class="bg-[#121212] border border-white/10 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-[#FFC300]/20 text-[#FFC300] rounded-xl flex items-center justify-center text-lg">💰</div><div><p class="font-black text-xs">Sell Report</p><p class="text-[10px] text-white/40">বিক্রির হিসাব</p></div></a>
+      <a href="admin-buy-dashboard.html" class="bg-[#121212] border border-white/10 p-4 rounded-2xl flex items-center gap-3"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg">🛒</div><div><p class="font-black text-xs">Buy Report</p><p class="text-[10px] text-white/40">কেনার হিসাব</p></div></a>
+    </div>
+  </div>
+
+  <div class="bg-white text-black rounded-3xl p-5">
+    <h3 class="font-black text-sm">📊 Final Summary</h3>
+    <div class="mt-3 space-y-2 text-xs">
+      <div class="flex justify-between"><span class="opacity-60">Total Buy Cost</span><span id="fBuy" class="font-black">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">Current Stock Value</span><span id="fStock" class="font-bold">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">Total Sell</span><span id="fSell" class="font-black">৳0</span></div>
+      <div class="flex justify-between border-t border-black/10 pt-2 font-bold"><span class="opacity-60">Total Expense</span><span id="fExpense" class="font-black text-red-600">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">Cash In Hand</span><span id="fCash" class="font-black text-green-600">৳0</span></div>
+      <div class="flex justify-between"><span class="opacity-60">Due বাকি</span><span id="fDue" class="font-black text-red-600">৳0</span></div>
+      <div class="flex justify-between border-t border-black/10 pt-2 font-black text-base"><span>NET PROFIT</span><span id="fProfit" class="text-xl">৳0</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📦</span><span class="text-[10px]">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">💰</span><span class="text-[10px]">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">🛒</span><span class="text-[10px]">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">👥</span><span class="text-[10px]">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl bg-[#FFC300] text-black"><span class="text-lg">📊</span><span class="text-[10px] font-black">Hisab</span></a>
+</div>
+
+<script type="module" src="./admin-hisab-dashboard.js"></script>
+</body>
+</html>
