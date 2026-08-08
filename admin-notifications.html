@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notifications - Zevi Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<style>body{font-family:'Hind Siliguri',sans-serif}.hidden{display:none!important}</style>
+</head>
+<body class="bg-[#080808] text-white hidden">
+
+<div id="loading" class="fixed inset-0 bg-[#080808] flex items-center justify-center z-[100]">
+  <div class="text-center"><div class="w-10 h-10 border-4 border-white/10 border-t-[#FFC300] rounded-full animate-spin mx-auto"></div><p class="text-xs text-white/40 mt-3">লোড হচ্ছে...</p></div>
+</div>
+
+<div class="bg-[#121212] border-b border-white/10 p-4 flex justify-between items-center sticky top-0 z-50">
+  <div class="flex gap-3 items-center">
+    <a href="admin-dashboard.html" class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">←</a>
+    <div><h1 class="font-black leading-none">Notifications</h1><p class="text-xs text-white/40">পুশ নোটিফিকেশন ম্যানেজমেন্ট</p></div>
+  </div>
+  <div class="bg-[#FFC300] text-black px-3 py-1 rounded-full text-xs font-black" id="totalUsers">0 Users</div>
+</div>
+
+<div class="p-4 max-w-5xl mx-auto pb-28 space-y-6">
+
+  <!-- Stats -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3 text-center"><p class="text-[10px] text-white/40">মোট পাঠানো</p><p id="totalSent" class="font-black text-xl">0</p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3 text-center"><p class="text-[10px] text-white/40">আজকে</p><p id="todaySent" class="font-black text-xl text-[#FFC300]">0</p></div>
+    <div class="bg-[#121212] border border-white/10 rounded-2xl p-3 text-center"><p class="text-[10px] text-white/40">Click Rate</p><p id="clickRate" class="font-black text-xl text-green-400">0%</p></div>
+  </div>
+
+  <!-- Quick Templates -->
+  <div>
+    <h3 class="font-black text-sm mb-3">⚡ Quick Templates</h3>
+    <div class="flex gap-2 overflow-auto scrollbar-hide pb-2">
+      <button onclick="useTemplate('new')" class="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-xs whitespace-nowrap hover:border-[#FFC300]/50">🔥 New Arrival</button>
+      <button onclick="useTemplate('offer')" class="bg-[#FFC300]/20 border border-[#FFC300]/20 px-4 py-2 rounded-full text-xs whitespace-nowrap text-[#FFC300]">💰 Offer 50% OFF</button>
+      <button onclick="useTemplate('due')" class="bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-full text-xs whitespace-nowrap text-red-400">⏰ Due Reminder</button>
+      <button onclick="useTemplate('stock')" class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-xs whitespace-nowrap text-yellow-400">📦 Low Stock Alert</button>
+      <button onclick="useTemplate('eid')" class="bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-full text-xs whitespace-nowrap text-green-400">🎉 Eid Offer</button>
+    </div>
+  </div>
+
+  <!-- Send Form -->
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5 space-y-4">
+    <h3 class="font-black">📢 নতুন নোটিফিকেশন পাঠাও</h3>
+
+    <div><label class="text-xs text-white/40">Title *</label><input id="notifTitle" type="text" placeholder="যেমন: Zevi Hub এ নতুন Hoodie এসেছে!" class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none"></div>
+
+    <div><label class="text-xs text-white/40">Message *</label><textarea id="notifBody" rows="3" placeholder="বিস্তারিত লিখুন..." class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none"></textarea></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div><label class="text-xs text-white/40">Image URL (Optional)</label><input id="notifImage" type="text" placeholder="https://..." class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none"></div>
+      <div><label class="text-xs text-white/40">Link / Product ID (Optional)</label><input id="notifLink" type="text" placeholder="products_live/product_id" class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div><label class="text-xs text-white/40">Audience</label>
+        <select id="notifAudience" class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none">
+          <option value="all">All Users (সবাই)</option>
+          <option value="active">Active Last 7 Days</option>
+          <option value="due">Due আছে যাদের</option>
+          <option value="no_order">7 দিন Order করে নাই</option>
+          <option value="custom">Custom Tokens (Manual)</option>
+        </select>
+      </div>
+      <div><label class="text-xs text-white/40">Type</label>
+        <select id="notifType" class="w-full mt-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#FFC300] outline-none">
+          <option value="promo">🎁 Promo / Offer</option>
+          <option value="new">🔥 New Arrival</option>
+          <option value="order">📦 Order Update</option>
+          <option value="due">⏰ Due Reminder</option>
+          <option value="system">⚙️ System</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="previewBox" class="bg-black border border-white/10 rounded-2xl p-4 hidden">
+      <p class="text-[10px] text-white/30">PREVIEW</p>
+      <div class="flex gap-3 mt-2">
+        <div class="w-10 h-10 bg-[#FFC300] rounded-full flex items-center justify-center text-black font-black">KS</div>
+        <div><p id="prevTitle" class="font-bold text-sm">Title</p><p id="prevBody" class="text-xs text-white/60">Message</p></div>
+      </div>
+    </div>
+
+    <button id="sendBtn" class="w-full bg-[#FFC300] text-black font-black py-4 rounded-2xl hover:bg-[#ffcc33] transition">🚀 এখনই পাঠাও</button>
+    <p class="text-[10px] text-white/30 text-center">Firebase Cloud Messaging দিয়ে সব Device এ যাবে</p>
+  </div>
+
+  <!-- History -->
+  <div class="bg-[#121212] border border-white/10 rounded-3xl p-5">
+    <div class="flex justify-between items-center">
+      <h3 class="font-black text-sm">🕒 History</h3>
+      <button id="refreshHistory" class="text-xs bg-white/10 px-3 py-1 rounded-full">Refresh</button>
+    </div>
+    <div id="historyList" class="mt-4 space-y-3"><p class="text-xs text-white/30">লোড হচ্ছে...</p></div>
+  </div>
+
+</div>
+
+<!-- Bottom Nav - No Yellow Active -->
+<div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-white/10 px-1 py-2 flex justify-around items-center z-50">
+  <a href="admin-product-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📦</span><span class="text-[10px] font-bold">Product</span></a>
+  <a href="admin-sell-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">💰</span><span class="text-[10px] font-bold">Sell</span></a>
+  <a href="admin-buy-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">🛒</span><span class="text-[10px] font-bold">Buy</span></a>
+  <a href="admin-employee-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">👥</span><span class="text-[10px] font-bold">Employee</span></a>
+  <a href="admin-hisab-dashboard.html" class="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl text-white/60"><span class="text-lg">📊</span><span class="text-[10px] font-bold">Hisab</span></a>
+</div>
+
+<script type="module" src="./admin-notifications.js"></script>
+</body>
+</html>
